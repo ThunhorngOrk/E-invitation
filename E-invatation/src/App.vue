@@ -5,7 +5,6 @@ import InvitationView from './components/InvitationView.vue'
 import EditorPage from './pages/EditorPage.vue'
 import AuthPage from './pages/AuthPage.vue'
 import StylePage from './pages/StylePage.vue'
-import EventFormPage from './pages/EventFormPage.vue'
 import { isAuthenticated } from './stores/auth'
 import { hasChosenTheme } from './stores/theme'
 
@@ -16,8 +15,15 @@ const ROUTES = {
   '#/register': 'register',
   '#/login': 'login',
   '#/styles': 'styles',
-  '#/event': 'event',
   '#/preview': 'preview',
+}
+
+// The event form was merged into the edit page; keep the old URL working.
+const LEGACY_HASHES = { '#/event': '#/edit' }
+
+function normalizeHash() {
+  const target = LEGACY_HASHES[window.location.hash]
+  if (target) window.history.replaceState(null, '', target)
 }
 
 function parseRoute() {
@@ -25,6 +31,7 @@ function parseRoute() {
 }
 
 function resolveInitialRoute() {
+  normalizeHash()
   const next = parseRoute()
   if (!isAuthenticated.value && (next === 'home' || next === 'edit' || next === 'styles')) {
     window.location.hash = '#/register'
@@ -46,6 +53,7 @@ function syncRoute() {
   const hash = window.location.hash
   if (hash && !hash.startsWith('#/')) return
 
+  normalizeHash()
   const next = parseRoute()
 
   if (!isAuthenticated.value && (next === 'home' || next === 'edit' || next === 'styles')) {
@@ -84,8 +92,6 @@ onUnmounted(() => window.removeEventListener('hashchange', syncRoute))
   <StylePage v-else-if="route === 'styles'" />
 
   <EditorPage v-else-if="route === 'edit'" />
-
-  <EventFormPage v-else-if="route === 'event'" />
 
   <InvitationView v-else />
 </template>

@@ -13,21 +13,24 @@ import { loadResponses, saveResponses } from '../utils/rsvpStorage'
 import { toKhmerNumber } from '../utils/khmer'
 import { currentUser } from '../stores/auth'
 import { activeTheme } from '../stores/theme'
+import { t } from '../i18n'
+import EventFormPage from './EventFormPage.vue'
 
-const tabs = [
-  { id: 'couple', label: 'គូស្វាមីភរិយា' },
-  { id: 'invite', label: 'សារអញ្ជើញ' },
-  { id: 'labels', label: 'ចំណងជើងផ្នែក' },
-  { id: 'date', label: 'ថ្ងៃ និងទីតាំង' },
-  { id: 'schedule', label: 'កម្មវិធី' },
-  { id: 'gallery', label: 'រូបថត' },
-  { id: 'design', label: 'រចនា' },
-  { id: 'responses', label: 'ការឆ្លើយតប' },
-]
+const tabs = computed(() => [
+  { id: 'event', label: t('editor.tabs.event') },
+  { id: 'couple', label: t('editor.tabs.couple') },
+  { id: 'invite', label: t('editor.tabs.invite') },
+  { id: 'labels', label: t('editor.tabs.labels') },
+  { id: 'date', label: t('editor.tabs.date') },
+  { id: 'schedule', label: t('editor.tabs.schedule') },
+  { id: 'gallery', label: t('editor.tabs.gallery') },
+  { id: 'design', label: t('editor.tabs.design') },
+  { id: 'responses', label: t('editor.tabs.responses') },
+])
 
 const people = [
   { key: 'groom', label: 'កូនកំលោះ' },
-  { key: 'bride', label: 'កូនក្លាយ' },
+  { key: 'bride', label: 'កូនក្រមុំ' },
 ]
 
 const tones = [
@@ -39,7 +42,7 @@ const tones = [
   { value: 'plum', label: 'ព្រហើន' },
 ]
 
-const activeTab = ref('couple')
+const activeTab = ref('event')
 const importInput = ref(null)
 const responses = ref([])
 const toast = reactive({ show: false, message: '', type: 'success' })
@@ -59,10 +62,10 @@ const totalGuests = computed(() =>
 )
 
 const statusText = computed(() => {
-  if (saveState.value === 'saving') return 'កំពុងរក្សាទុក...'
-  if (saveState.value === 'saved') return 'បានរក្សាទុក'
-  if (saveState.value === 'error') return 'រក្សាទុកមិនបាន'
-  return 'រង់ចាំការកែប្រែ'
+  if (saveState.value === 'saving') return t('editor.status.saving')
+  if (saveState.value === 'saved') return t('editor.status.saved')
+  if (saveState.value === 'error') return t('editor.status.error')
+  return t('editor.status.idle')
 })
 
 const sizeText = computed(() => {
@@ -295,10 +298,8 @@ onUnmounted(() => clearTimeout(toastTimer))
       <div class="head-inner">
         <div class="brand">
           <p class="brand-eyebrow">E-invitation Editor</p>
-          <h1>រៀបចំការអញ្ជើញ</h1>
-          <p class="brand-sub">
-            កែប្រែព័ត៌មានទាំងអស់ បន្ថែមរូបថត និងគ្រប់គ្រងការឆ្លើយតប — ការផ្លាស់ប្តូរនឹងរក្សាទុកដោយស្វ័យប្រវត្តិ។
-          </p>
+          <h1>{{ t('editor.title') }}</h1>
+          <p class="brand-sub">{{ t('editor.sub') }}</p>
         </div>
 
         <div class="head-side">
@@ -307,7 +308,7 @@ onUnmounted(() => clearTimeout(toastTimer))
               {{ (currentUser?.name || '?').slice(0, 1) }}
             </span>
             <span class="account-text">
-              <strong>{{ currentUser?.name || 'អ្នកប្រើប្រាស់' }}</strong>
+              <strong>{{ currentUser?.name || t('editor.user') }}</strong>
               <small>{{ currentUser?.email || '' }}</small>
             </span>
           </div>
@@ -318,13 +319,13 @@ onUnmounted(() => clearTimeout(toastTimer))
           </span>
           <div class="head-actions">
             <button class="btn btn-ghost btn-sm" type="button" @click="handleExport">
-              នាំចេញ JSON
+              {{ t('editor.exportJson') }}
             </button>
             <button class="btn btn-ghost btn-sm" type="button" @click="triggerImport">
-              នាំចូល JSON
+              {{ t('editor.importJson') }}
             </button>
             <button class="btn btn-ghost btn-sm danger-ghost" type="button" @click="handleReset">
-              កំណត់ឡើងវិញ
+              {{ t('editor.reset') }}
             </button>
           </div>
           <input
@@ -339,7 +340,7 @@ onUnmounted(() => clearTimeout(toastTimer))
     </header>
 
     <div class="editor-body">
-      <aside class="tabs" aria-label="ផ្នែកកែប្រែ">
+      <aside class="tabs" :aria-label="t('editor.tabsAria')">
         <button
           v-for="tab in tabs"
           :key="tab.id"
@@ -356,17 +357,21 @@ onUnmounted(() => clearTimeout(toastTimer))
         </button>
 
         <div class="storage-card">
-          <p class="storage-label">ទំហំទិន្នន័យ</p>
+          <p class="storage-label">{{ t('editor.storageLabel') }}</p>
           <p class="storage-value">{{ sizeText }}</p>
-          <p class="storage-hint">រក្សាទុកក្នុងឧបករណ៍នេះតែមួយ</p>
+          <p class="storage-hint">{{ t('editor.storageHint') }}</p>
         </div>
       </aside>
 
       <div class="panels">
+        <section v-show="activeTab === 'event'" class="panel event-panel">
+          <EventFormPage embedded @saved="notify('បានរក្សាទុកព័ត៌មានកម្មវិធី')" />
+        </section>
+
         <section v-show="activeTab === 'couple'" class="panel">
           <div class="panel-head">
             <h2>គូស្វាមីភរិយា</h2>
-            <p>កែឈ្មោះ តួនាទី ឪពុកម្តាយ និងបន្ថែមរូបថតរបស់កូនកំលោះ និងកូនក្លាយ។</p>
+            <p>កែឈ្មោះ តួនាទី ឪពុកម្តាយ និងបន្ថែមរូបថតរបស់កូនកំលោះ និងកូនក្រមុំ។</p>
           </div>
 
           <article v-for="person in people" :key="person.key" class="sub-card">
@@ -1207,6 +1212,13 @@ onUnmounted(() => clearTimeout(toastTimer))
   border-radius: 18px;
   background: var(--surface);
   box-shadow: 0 24px 50px -44px rgba(53, 11, 21, 0.6);
+}
+
+.panel.event-panel {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .panel-head {

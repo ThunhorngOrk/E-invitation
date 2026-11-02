@@ -211,6 +211,7 @@ const messages = {
       storageLabel: 'ទំហំទិន្នន័យ',
       storageHint: 'រក្សាទុកក្នុងឧបករណ៍នេះតែមួយ',
       tabs: {
+        event: 'ព័ត៌មានកម្មវិធី',
         couple: 'គូស្វាមីភរិយា',
         invite: 'សារអញ្ជើញ',
         labels: 'ចំណងជើងផ្នែក',
@@ -434,6 +435,7 @@ const messages = {
       storageLabel: 'Data size',
       storageHint: 'Stored on this device only',
       tabs: {
+        event: 'Event info',
         couple: 'Couple',
         invite: 'Message',
         labels: 'Section labels',

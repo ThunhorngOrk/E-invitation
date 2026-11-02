@@ -79,16 +79,6 @@ function handleLogout() {
       </div>
 
       <nav class="nav-links" :class="{ open }">
-        <a
-          class="nav-link nav-create"
-          :class="{ active: route === 'event' }"
-          href="#/event"
-          @click="close"
-        >
-          <Icon name="plus" :size="16" />
-          <span>{{ t('nav.create') }}</span>
-        </a>
-
         <template v-if="isAuthenticated">
           <a
             class="nav-link"

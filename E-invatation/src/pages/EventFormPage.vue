@@ -26,6 +26,11 @@ const {
   validate,
 } = useEventDraft()
 
+const props = defineProps({
+  embedded: { type: Boolean, default: false },
+})
+const emit = defineEmits(['saved'])
+
 const scheduleOpen = ref(true)
 const coverInput = ref(null)
 const toast = ref({ show: false, message: '', type: 'success' })
@@ -150,6 +155,11 @@ function handleSubmit() {
 
   notify(saved ? t('form.toastSaved') : t('form.toastSavedLocal'), saved ? 'success' : 'info')
 
+  if (props.embedded) {
+    emit('saved')
+    return
+  }
+
   window.setTimeout(() => {
     window.location.hash = '#/preview'
     window.scrollTo({ top: 0, behavior: 'auto' })
@@ -160,8 +170,8 @@ onUnmounted(() => clearTimeout(toastTimer))
 </script>
 
 <template>
-  <div class="event-page">
-    <header class="topbar">
+  <div class="event-page" :class="{ embedded }">
+    <header v-if="!embedded" class="topbar">
       <div class="topbar-inner">
         <button class="back-btn" type="button" :aria-label="t('form.backAria')" @click="goPrevious">
           <Icon name="arrow-left" :size="19" />
@@ -457,9 +467,14 @@ onUnmounted(() => clearTimeout(toastTimer))
           </div>
         </div>
       </section>
+
+      <button v-if="embedded" class="embedded-submit" type="button" @click="handleSubmit">
+        <Icon name="check" :size="18" />
+        <span>{{ t('form.confirm') }}</span>
+      </button>
     </main>
 
-    <div class="action-bar">
+    <div v-if="!embedded" class="action-bar">
       <div class="action-inner">
         <button class="btn-ghost" type="button" @click="goPrevious">
           <Icon name="arrow-left" :size="18" />
@@ -482,6 +497,41 @@ onUnmounted(() => clearTimeout(toastTimer))
 </template>
 
 <style scoped>
+.event-page.embedded {
+  min-height: 0;
+  padding-bottom: 0;
+  background: transparent;
+}
+
+.event-page.embedded .page-body {
+  width: 100%;
+  margin: 0;
+  gap: 0.9rem;
+}
+
+.embedded-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  min-height: 50px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--maroon-700), var(--maroon-800));
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  box-shadow: 0 14px 26px -16px color-mix(in srgb, var(--maroon-800) 90%, transparent);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.embedded-submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 30px -16px color-mix(in srgb, var(--maroon-800) 95%, transparent);
+}
+
 .event-page {
   min-height: 100svh;
   padding-bottom: 7.5rem;

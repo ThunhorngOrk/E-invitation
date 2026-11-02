@@ -16,8 +16,8 @@ export const defaultInvitation = {
     nameEn: 'Chan Sopheak',
     initial: 'ស',
     photo: '',
-    role: 'កូនក្លាយ',
-    parentsTitle: 'គ្រួសារខាងកូនក្លាយ',
+    role: 'កូនក្រមុំ',
+    parentsTitle: 'គ្រួសារខាងកូនក្រមុំ',
     parents: 'លោក ចាន់ សំអុន និង លោកស្រី ចាន់ ធារី',
     parentsAddress: 'ភូមិទួលគោក សង្កាត់ទួលគោក ខណ្ឌចំការមន រាជធានីភ្នំពេញ',
   },
@@ -29,7 +29,7 @@ export const defaultInvitation = {
   countdownTitle: 'រាប់ថយក្រោយឆ្ពោះទៅថ្ងៃមង្គល',
   countdownPast: 'ថ្ងៃមង្គលបានមកដល់ហើយ — សូមអរគុណសម្រាប់ការចូលរួម!',
   coupleEyebrow: 'The Bride & Groom',
-  coupleTitle: 'កូនកំលោះ និងកូនក្លាយ',
+  coupleTitle: 'កូនកំលោះ និងកូនក្រមុំ',
   coupleSub:
     'ពីរបេះដូង មួយជីវិតរួមគ្នា ចាប់ផ្តើមដោយក្តីស្រលាញ់ និងការគោរពគ្នាទៅវិញទៅមក។',
   scheduleEyebrow: 'Traditional Ceremony',
@@ -69,7 +69,7 @@ export const defaultInvitation = {
     {
       time: '07:30',
       title: 'ពិធីហែក្លំ',
-      desc: 'ក្លំហែយ៉ាងអធិកអធម ពីផ្ទះកូនក្លាយឆ្ពោះទៅកាន់ទីតាំងពិធី។',
+      desc: 'ក្លំហែយ៉ាងអធិកអធម ពីផ្ទះកូនក្រមុំឆ្ពោះទៅកាន់ទីតាំងពិធី។',
     },
     {
       time: '09:00',
@@ -88,7 +88,7 @@ export const defaultInvitation = {
     },
     {
       time: '15:00',
-      title: 'ពិធីហែកូនក្លាយ',
+      title: 'ពិធីហែកូនក្រមុំ',
       desc: 'បញ្ចប់ពិធីដោយសេចក្តីរីករាយ និងអនុស្សាវរីយ៍ដ៏ស្រស់ស្អាត។',
     },
   ],

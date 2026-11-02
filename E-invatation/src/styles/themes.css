@@ -1,0 +1,149 @@
+:root {
+  --maroon-900: #350b15;
+  --maroon-800: #4a1220;
+  --maroon-700: #6d1f2e;
+  --maroon-600: #8a2c3e;
+  --rose: #b0606e;
+  --gold-600: #a9823f;
+  --gold-500: #c9a25c;
+  --gold-400: #dcb97a;
+  --gold-300: #efd9ae;
+  --gold-200: #f6e8c9;
+  --ivory: #fbf6ec;
+  --ivory-2: #f7efdf;
+  --blush: #f2e0da;
+  --ink: #3a2527;
+  --muted: #87685f;
+  --shadow: 0 34px 70px -38px rgba(53, 11, 21, 0.45);
+  --frame: rgba(201, 162, 92, 0.45);
+}
+
+[data-theme='classic'] {
+  --maroon-900: #350b15;
+  --maroon-800: #4a1220;
+  --maroon-700: #6d1f2e;
+  --maroon-600: #8a2c3e;
+  --rose: #b0606e;
+  --gold-600: #a9823f;
+  --gold-500: #c9a25c;
+  --gold-400: #dcb97a;
+  --gold-300: #efd9ae;
+  --gold-200: #f6e8c9;
+  --ivory: #fbf6ec;
+  --ivory-2: #f7efdf;
+  --blush: #f2e0da;
+  --ink: #3a2527;
+  --muted: #87685f;
+  --shadow: 0 34px 70px -38px rgba(53, 11, 21, 0.45);
+  --frame: rgba(201, 162, 92, 0.45);
+}
+
+[data-theme='emerald'] {
+  --maroon-900: #0d3328;
+  --maroon-800: #14503f;
+  --maroon-700: #1c6b54;
+  --maroon-600: #2a866a;
+  --rose: #9ab7a4;
+  --gold-600: #8d6d2f;
+  --gold-500: #bb9846;
+  --gold-400: #d4b56d;
+  --gold-300: #e8d5a6;
+  --gold-200: #f3e8cc;
+  --ivory: #f4f7f1;
+  --ivory-2: #eaf0e6;
+  --blush: #dfe9dd;
+  --ink: #24352c;
+  --muted: #657a68;
+  --shadow: 0 34px 70px -38px rgba(13, 51, 40, 0.45);
+  --frame: rgba(187, 152, 70, 0.45);
+}
+
+[data-theme='royal'] {
+  --maroon-900: #111c38;
+  --maroon-800: #1d2f56;
+  --maroon-700: #2b4478;
+  --maroon-600: #3c5b95;
+  --rose: #8fa3c7;
+  --gold-600: #96732f;
+  --gold-500: #c9a25c;
+  --gold-400: #dcb97a;
+  --gold-300: #efd9ae;
+  --gold-200: #f6e8c9;
+  --ivory: #f5f3ec;
+  --ivory-2: #edeadf;
+  --blush: #e3e3ec;
+  --ink: #26293a;
+  --muted: #6b7086;
+  --shadow: 0 34px 70px -38px rgba(17, 28, 56, 0.45);
+  --frame: rgba(201, 162, 92, 0.45);
+}
+
+[data-theme='blush'] {
+  --maroon-900: #4a232c;
+  --maroon-800: #6e3a46;
+  --maroon-700: #92505f;
+  --maroon-600: #a85d6b;
+  --rose: #cf8f9b;
+  --gold-600: #a07c45;
+  --gold-500: #c7a266;
+  --gold-400: #ddc08d;
+  --gold-300: #f0dfc0;
+  --gold-200: #f8eeda;
+  --ivory: #fdf4f1;
+  --ivory-2: #f9eae5;
+  --blush: #f4dcd6;
+  --ink: #433034;
+  --muted: #94707a;
+  --shadow: 0 34px 70px -38px rgba(74, 35, 44, 0.35);
+  --frame: rgba(199, 162, 102, 0.5);
+}
+
+[data-theme='midnight'] {
+  --maroon-900: #17131c;
+  --maroon-800: #241f2b;
+  --maroon-700: #3a3145;
+  --maroon-600: #57465f;
+  --rose: #b9897f;
+  --gold-600: #9c7255;
+  --gold-500: #bf9273;
+  --gold-400: #d9a88f;
+  --gold-300: #ecc8b6;
+  --gold-200: #f7e2d6;
+  --ivory: #f7f1ec;
+  --ivory-2: #efe6de;
+  --blush: #ead8d0;
+  --ink: #2e2732;
+  --muted: #82707c;
+  --shadow: 0 34px 70px -38px rgba(23, 19, 28, 0.55);
+  --frame: rgba(217, 168, 143, 0.45);
+}
+
+:root,
+[data-theme] {
+  --page-bg-image:
+    radial-gradient(rgba(201, 162, 92, 0.1) 1px, transparent 1px),
+    radial-gradient(ellipse at 12% 8%, color-mix(in srgb, var(--blush) 60%, transparent), transparent 55%),
+    radial-gradient(ellipse at 88% 92%, color-mix(in srgb, var(--gold-300) 35%, transparent), transparent 55%);
+  --hero-bg:
+    radial-gradient(circle at 18% 16%, color-mix(in srgb, var(--gold-500) 22%, transparent), transparent 42%),
+    radial-gradient(circle at 84% 82%, color-mix(in srgb, var(--rose) 22%, transparent), transparent 46%),
+    linear-gradient(155deg, color-mix(in srgb, var(--maroon-700) 78%, #000) 0%, var(--maroon-700) 44%, color-mix(in srgb, var(--maroon-900) 88%, #000) 100%);
+  --band-bg:
+    radial-gradient(circle at 20% 30%, color-mix(in srgb, var(--gold-500) 18%, transparent), transparent 45%),
+    radial-gradient(circle at 80% 70%, color-mix(in srgb, var(--rose) 20%, transparent), transparent 45%),
+    linear-gradient(160deg, var(--maroon-800), var(--maroon-900) 70%);
+  --footer-bg:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--gold-500) 14%, transparent), transparent 55%),
+    linear-gradient(170deg, var(--maroon-900), var(--maroon-800) 55%, color-mix(in srgb, var(--maroon-900) 90%, #000));
+  --hero-shade: linear-gradient(180deg, color-mix(in srgb, var(--maroon-900) 45%, transparent), color-mix(in srgb, var(--maroon-900) 82%, transparent));
+  --gold-gradient: linear-gradient(135deg, var(--gold-200) 0%, var(--gold-400) 35%, var(--gold-500) 60%, var(--gold-300) 100%);
+  --text-gold-gradient: linear-gradient(100deg, var(--gold-200) 0%, var(--gold-400) 32%, var(--gold-500) 55%, var(--gold-300) 78%, var(--gold-600) 100%);
+  --card-bg: linear-gradient(180deg, #fffdf8 0%, var(--ivory) 55%, var(--ivory-2) 100%);
+  --surface: #fffdf8;
+  --surface-alt: var(--ivory);
+  --surface-soft: #fffaf0;
+  --control-bg: radial-gradient(circle at 30% 25%, var(--maroon-600), var(--maroon-800) 70%);
+  --portrait-groom: linear-gradient(165deg, var(--maroon-600) 0%, var(--maroon-700) 48%, var(--maroon-900) 100%);
+  --portrait-bride: linear-gradient(165deg, color-mix(in srgb, var(--rose) 70%, #fff) 0%, var(--rose) 40%, var(--maroon-700) 100%);
+  --section-tint: linear-gradient(180deg, color-mix(in srgb, var(--ivory-2) 50%, transparent), color-mix(in srgb, var(--blush) 55%, transparent));
+}

@@ -1,0 +1,305 @@
+/* Dark mode — active when <html data-mode="dark"> */
+
+[data-mode='dark'] {
+  background-color: #171015;
+  --ivory: #171015;
+  --ivory-2: #1e151b;
+  --blush: #2a1a23;
+  --ink: #f2e6d8;
+  --muted: #b7a0a4;
+  --surface: #21171f;
+  --surface-alt: #1b1218;
+  --surface-soft: #281b24;
+  --card-bg: linear-gradient(180deg, #261a22 0%, #1e151b 55%, #191116 100%);
+  --frame: rgba(201, 162, 92, 0.26);
+  --shadow: 0 34px 70px -38px rgba(0, 0, 0, 0.8);
+  --page-bg-image:
+    radial-gradient(rgba(201, 162, 92, 0.14) 1px, transparent 1px),
+    radial-gradient(ellipse at 12% 8%, rgba(201, 162, 92, 0.08), transparent 55%),
+    radial-gradient(ellipse at 88% 92%, rgba(176, 96, 110, 0.16), transparent 55%);
+  --section-tint: linear-gradient(180deg, rgba(30, 21, 27, 0.6), rgba(42, 26, 35, 0.75));
+  color-scheme: dark;
+}
+
+[data-mode='dark'] body {
+  background-color: var(--ivory);
+  color: var(--ink);
+}
+
+[data-mode='dark'] ::placeholder {
+  color: color-mix(in srgb, var(--muted) 70%, transparent) !important;
+}
+
+[data-mode='dark'] select option {
+  background-color: var(--surface);
+  color: var(--ink);
+}
+
+/* Keep the hero's translucent ghost button visible on the photo. */
+[data-mode='dark'] .hero .btn-ghost {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--ivory) !important;
+}
+
+/* Gold-tinted hover states need dark text to stay readable. */
+[data-mode='dark'] .back-btn:hover,
+[data-mode='dark'] .add-day-wide:hover,
+[data-mode='dark'] .cover-drop:hover,
+[data-mode='dark'] .activity-remove:hover,
+[data-mode='dark'] .add-activity:hover,
+[data-mode='dark'] .mini-btn:hover,
+[data-mode='dark'] .mode-toggle:hover,
+[data-mode='dark'] .day-remove:hover {
+  color: var(--maroon-900) !important;
+}
+
+[data-mode='dark'] .brand-copy strong {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .user-chip {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .menu-toggle,
+[data-mode='dark'] .mode-toggle {
+  background-color: var(--surface) !important;
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .nav-link.active {
+  background-color: var(--surface) !important;
+  color: var(--gold-200) !important;
+}
+
+[data-mode='dark'] .nav-links {
+  background: color-mix(in srgb, var(--ivory) 98%, transparent) !important;
+}
+
+[data-mode='dark'] .app-nav {
+  border-bottom: 1px solid color-mix(in srgb, var(--gold-500) 18%, transparent) !important;
+  background: color-mix(in srgb, var(--ivory) 94%, transparent) !important;
+}
+[data-mode='dark'] .name {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .label-text {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .req {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .input {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .has-error .input {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .day {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .day-titles strong {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .day-remove {
+  background-color: var(--surface) !important;
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .activities-title {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .activities-empty {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .activity {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .activity-name {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .activity-time {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .activity-remove {
+  background-color: var(--surface) !important;
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .add-activity {
+  background-color: var(--surface) !important;
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .family-name {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .field label {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .field-label {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .required {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .field input {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .field select {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .field textarea {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .choice {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .success h3 {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .card h3 {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .venue-card h3 {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .row-icon {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .map-badge {
+  background-color: var(--surface) !important;
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .form-head h2 {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .field > span {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .field b {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .switch button {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .storage-value {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .panel-head h2 {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .sub-head h3 {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .photo-row {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .mini-btn {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .block-title {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .item-card {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .icon-btn {
+  background-color: var(--surface) !important;
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .gallery-card {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .design-info h3 {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .design-note p {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .stat {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .stat strong {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .response-card {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .back-btn {
+  background-color: var(--surface) !important;
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .eyebrow {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .topbar-title h1 {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .save-chip {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .save-chip.saving {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .submitted-chip {
+  background-color: var(--surface) !important;
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .card {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .card-head-text h2 {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .schedule-title {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .schedule-error {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .schedule-empty {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .empty-title {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .add-day-wide {
+  background-color: var(--surface) !important;
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .cover-label {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .cover-drop {
+  background-color: var(--surface) !important;
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .preview-head {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .preview-card {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .preview-domain {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .preview-body h3 {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .btn-ghost {
+  background-color: var(--surface) !important;
+}
+[data-mode='dark'] .preview-label {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .card-foot h2 {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .selection-info strong {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .kh-heading {
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .btn-outline {
+  background-color: var(--surface) !important;
+  color: var(--gold-200) !important;
+}
+[data-mode='dark'] .btn-outline:hover {
+  background-color: var(--surface) !important;
+}

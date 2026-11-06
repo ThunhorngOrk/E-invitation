@@ -1,7 +1,7 @@
 import { reactive, ref, watch } from 'vue'
 import { defaultInvitation } from '../data/invitation'
 
-const STORAGE_KEY = 'khmer-invitation-content-v1'
+const STORAGE_KEY = 'khmer-invitation-content-v2'
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value))

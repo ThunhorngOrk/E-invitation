@@ -1,0 +1,117 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Invitation;
+use App\Models\User;
+use Illuminate\Database\Seeder;
+
+class DemoInvitationSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $user = User::firstOrCreate(
+            ['email' => 'demo@einvitation.test'],
+            [
+                'name' => 'Demo Couple',
+                'phone' => '012345678',
+                'password' => 'password',
+            ],
+        );
+
+        Invitation::updateOrCreate(
+            ['slug' => 'thol-sophiti-long-manin'],
+            [
+                'user_id' => $user->id,
+                'title' => 'Thol Sophiti & Long Manin',
+                'status' => 'published',
+                'published_at' => now(),
+                'content' => $this->content(),
+            ],
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function content(): array
+    {
+        return [
+            'heroImage' => '/images/thol-long-hero.jpg',
+            'heroKicker' => 'សិរីមង្គលអាពាហ៍ពិពាហ៍',
+            'groom' => [
+                'nameKh' => 'ថុល សុភិទិ',
+                'nameEn' => 'Thol Sophiti',
+                'initial' => 'ថ',
+                'photo' => '',
+                'role' => 'កូនកំលោះ',
+                'parentsTitle' => 'គ្រួសារខាងកូនកំលោះ',
+                'parents' => 'គ្រួសារ ថុល',
+                'parentsAddress' => 'រាជធានីភ្នំពេញ',
+            ],
+            'bride' => [
+                'nameKh' => 'ឡុង ម៉ានីន',
+                'nameEn' => 'Long Manin (Nin Nin)',
+                'initial' => 'ម',
+                'photo' => '',
+                'role' => 'កូនក្រមុំ',
+                'parentsTitle' => 'គ្រួសារខាងកូនក្រមុំ',
+                'parents' => 'គ្រួសារ ឡុង',
+                'parentsAddress' => 'ខេត្តកំពត',
+            ],
+            'eventTime' => '06:00',
+            'mapBadge' => 'រាជធានីភ្នំពេញ',
+            'inviteEyebrow' => 'ព្រះពរសិរីសួស្តី',
+            'inviteTitle' => 'សូមគោរពអញ្ជើញ',
+            'countdownEyebrow' => 'Save The Date',
+            'countdownTitle' => 'រាប់ថយក្រោយឆ្ពោះទៅថ្ងៃមង្គល',
+            'countdownPast' => 'ថ្ងៃមង្គលបានមកដល់ហើយ — សូមអរគុណសម្រាប់ការចូលរួម!',
+            'coupleEyebrow' => 'The Bride & Groom',
+            'coupleTitle' => 'កូនកំលោះ និងកូនក្រមុំ',
+            'coupleSub' => 'តារាចម្រៀង ថុល សុភិទិ និងសហគ្រិន ឡុង ម៉ានីន (Nin Nin) ចាប់ផ្តើមជីវិតរួមគ្នាដោយក្តីស្រលាញ់ និងការគោរពគ្នាទៅវិញទៅមក។',
+            'scheduleEyebrow' => 'Celebration Programme',
+            'scheduleTitle' => 'កម្មវិធីមង្គលការ',
+            'scheduleSub' => 'ពិធីមង្គលការ និងពិធីជប់លៀងអបអរសាទរ ដែលរួមបញ្ចូលពិធីប្រពៃណីខ្មែរ និងការអបអរសាទរយ៉ាងអធិកអធម។',
+            'galleryEyebrow' => 'Our Memories',
+            'galleryTitle' => 'អនុស្សាវរីយ៍',
+            'gallerySub' => 'រូបភាពនៃពេលវេលាដ៏ស្រស់ស្អាត ដែលយើងខ្ញុំបានឆ្លងកាត់ជាមួយគ្នា។',
+            'venueEyebrow' => 'The Venue',
+            'venueTitle' => 'ទីតាំងពិធី',
+            'venueSub' => 'សូមអញ្ជើញមកដល់ទីតាំងពិធីដោយសុខសាន្ត យើងខ្ញុំរង់ចាំទទួលភ្ញៀវដោយក្តីរីករាយ។',
+            'rsvpEyebrow' => 'RSVP',
+            'rsvpTitle' => 'ឆ្លើយតបការអញ្ជើញ',
+            'dateISO' => '2026-08-28T06:00:00+07:00',
+            'dateKh' => 'ថ្ងៃសុក្រ ទី២៨ ខែសីហា ឆ្នាំ២០២៦',
+            'dateEn' => 'Friday, 28 August 2026',
+            'lunarKh' => 'ពិធីមង្គលការ និងពិធីជប់លៀងអបអរសាទរ ថ្ងៃទី២៨-២៩ ខែសីហា ឆ្នាំ២០២៦',
+            'invitationText' => 'ដោយមានការយល់ព្រម និងព្រះពរពីគ្រួសារទាំងសងខាង យើងខ្ញុំសូមគោរពអញ្ជើញ ឯកឧត្តម លោកជំទាវ លោក លោកស្រី អ្នកនាង កញ្ញា និងភ្ញៀវជិតឆ្ងាយគ្រប់ទិសទី ចូលរួមជាអធិបតី និងផ្តល់កិត្តិយសក្នុងពិធីមង្គលការរបស់ ថុល សុភិទិ និង ឡុង ម៉ានីន។',
+            'invitationSub' => 'ការអញ្ជើញរបស់អ្នក គឺជាកិត្តិយសដ៏ខ្ពង់ខ្ពស់ និងជាសេចក្តីរីករាយដ៏ធំធេងសម្រាប់គ្រួសារយើងខ្ញុំ។',
+            'venue' => [
+                'name' => 'ស៊ូន អេន មូន រីវឺរសាយ ហូតែល',
+                'nameEn' => 'Sun & Moon, Riverside Hotel',
+                'address' => 'រាជធានីភ្នំពេញ ប្រទេសកម្ពុជា',
+                'mapQuery' => 'Sun & Moon Riverside Hotel Phnom Penh',
+                'note' => 'ពិធីភ្ជាប់ពាក្យ និងពិធីមង្គលការនឹងប្រព្រឹត្តទៅនៅថ្ងៃទី ២៨-២៩ ខែសីហា ឆ្នាំ២០២៦',
+            ],
+            'schedule' => [
+                ['time' => '06:00', 'title' => 'ពិធីហែក្លំ', 'desc' => 'ក្លំហែយ៉ាងអធិកអធម និងពិធីសែនជ័យ នៅថ្ងៃទី២៨ ខែសីហា ឆ្នាំ២០២៦។'],
+                ['time' => '08:00', 'title' => 'ពិធីភ្ជាប់ពាក្យ', 'desc' => 'ពិធីភ្ជាប់ពាក្យប្រពៃណីខ្មែរ ជាមួយសម្លៀកបំពាក់ពណ៌បៃតង-មាស ដ៏អធិកអធម។'],
+                ['time' => '10:00', 'title' => 'ពិធីសំពះផ្ទឹម', 'desc' => 'កិច្ចសំពះផ្ទឹមចងដៃ និងទទួលព្រះពរជ័យពីភ្ញៀវកិត្តិយស។'],
+                ['time' => '12:00', 'title' => 'ពិធីជប់លៀងអាហារ', 'desc' => 'អញ្ជើញភ្ញៀវពិសាអាហារ និងរីករាយជាមួយតន្ត្រីប្រពៃណីខ្មែរ។'],
+                ['time' => '17:00', 'title' => 'ពិធីជប់លៀងអបអរសាទរ', 'desc' => 'ពិធីជប់លៀងអបអរសាទរនៅ ស៊ូន អេន មូន រីវឺរសាយ ហូតែល នៅថ្ងៃទី២៩ ខែសីហា។'],
+                ['time' => '18:30', 'title' => 'ការសម្តែង និងការអបអរសាទរ', 'desc' => 'ការសម្តែងតន្ត្រី របាំ និងការអបអរសាទររួមគ្នាពេញមួយយប់។'],
+            ],
+            'gallery' => [
+                ['caption' => 'ថ្ងៃដែលយើងជួបគ្នា', 'tone' => 'wine', 'src' => '/images/thol-long-hero.jpg'],
+                ['caption' => 'ដំណើរផ្លូវនៃក្តីស្រលាញ់', 'tone' => 'gold', 'src' => '/images/thol-long-1.jpg'],
+                ['caption' => 'ពិធីភ្ជាប់ពាក្យ', 'tone' => 'deep', 'src' => '/images/thol-long-2.jpg'],
+                ['caption' => 'គ្រួសារទាំងសងខាង', 'tone' => 'sand', 'src' => '/images/thol-long-3.jpg'],
+                ['caption' => 'ស្នាមញញឹមរបស់យើង', 'tone' => 'rose', 'src' => ''],
+                ['caption' => 'ថ្ងៃមង្គលដ៏ស្រស់ស្អាត', 'tone' => 'plum', 'src' => ''],
+            ],
+            'blessing' => 'សូមព្រះរតនត្រ័យ និងវត្ថុស័ក្តិសិទ្ធិទាំងឡាយ ប្រទានពរជ័យដល់ ថុល សុភិទិ និង ឡុង ម៉ានីន ឱ្យទទួលបានសេចក្តីសុខ សុភមង្គល និងជីវិតរួមគ្នាដ៏យូរអង្វែង។',
+            'rsvpDeadline' => 'សូមឆ្លើយតបការអញ្ជើញមុនថ្ងៃទី ១៥ ខែសីហា ឆ្នាំ២០២៦',
+            'thanksText' => 'សូមអរគុណសម្រាប់ការចូលរួម និងការជូនពរដ៏ពិសិដ្ឋដល់ ថុល សុភិទិ និង ឡុង ម៉ានីន',
+        ];
+    }
+}

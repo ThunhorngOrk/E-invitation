@@ -81,6 +81,7 @@ function handleLogout() {
       <nav class="nav-links" :class="{ open }">
         <template v-if="isAuthenticated">
           <a
+            v-if="route !== 'edit' && route !== 'styles'"
             class="nav-link"
             :class="{ active: route === 'edit' }"
             href="#/edit"
@@ -90,6 +91,7 @@ function handleLogout() {
             <span>{{ t('nav.edit') }}</span>
           </a>
           <a
+            v-if="route !== 'styles'"
             class="nav-link"
             :class="{ active: route === 'styles' }"
             href="#/styles"

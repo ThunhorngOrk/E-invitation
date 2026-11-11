@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { invitation } from '../stores/invitation'
+import { pickLocalized, t } from '../i18n'
 import KhmerDivider from './KhmerDivider.vue'
 import CornerOrnament from './CornerOrnament.vue'
 import PetalRain from './PetalRain.vue'
@@ -14,7 +15,7 @@ function openInvitation() {
 async function share() {
   const data = {
     title: document.title,
-    text: `${invitation.groom.nameKh} និង ${invitation.bride.nameKh}`,
+    text: `${pickLocalized(invitation.groom.nameKh, invitation.groom.nameEn)} ${t('invitation.and')} ${pickLocalized(invitation.bride.nameKh, invitation.bride.nameEn)}`,
     url: window.location.href,
   }
 
@@ -74,21 +75,21 @@ async function share() {
         </div>
 
         <h1 class="names">
-          <span class="name text-gold">{{ invitation.groom.nameKh }}</span>
-          <span class="and">និង</span>
-          <span class="name text-gold">{{ invitation.bride.nameKh }}</span>
+          <span class="name text-gold">{{ pickLocalized(invitation.groom.nameKh, invitation.groom.nameEn) }}</span>
+          <span class="and">{{ t('invitation.and') }}</span>
+          <span class="name text-gold">{{ pickLocalized(invitation.bride.nameKh, invitation.bride.nameEn) }}</span>
         </h1>
 
         <p class="names-en">{{ invitation.groom.nameEn }} &amp; {{ invitation.bride.nameEn }}</p>
 
         <KhmerDivider />
 
-        <p class="date">{{ invitation.dateKh }}</p>
+        <p class="date">{{ pickLocalized(invitation.dateKh, invitation.dateEn) }}</p>
         <p class="lunar">{{ invitation.lunarKh }}</p>
 
         <div class="actions">
           <button class="btn btn-gold" type="button" @click="openInvitation">
-            បើកការអញ្ជើញ
+            {{ t('invitation.open') }}
             <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path
                 d="M12 5v14m0 0 5-5m-5 5-5-5"
@@ -109,21 +110,21 @@ async function share() {
                 stroke-linejoin="round"
               />
             </svg>
-            ចែករំលែក
+            {{ t('invitation.share') }}
           </button>
         </div>
 
-        <p class="venue-line">{{ invitation.venue.name }}</p>
+        <p class="venue-line">{{ pickLocalized(invitation.venue.name, invitation.venue.nameEn) }}</p>
 
-        <a class="scroll-cue" href="#invitation" aria-label="អូសចុះក្រោម">
+        <a class="scroll-cue" href="#invitation" :aria-label="t('invitation.scrollDown')">
           <span class="line"></span>
-          អូសចុះក្រោម
+          {{ t('invitation.scrollDown') }}
         </a>
       </div>
     </div>
 
     <Transition name="toast">
-      <p v-if="copied" class="toast" role="status">បានចម្លងតំណភ្ជាប់</p>
+      <p v-if="copied" class="toast" role="status">{{ t('invitation.copied') }}</p>
     </Transition>
   </section>
 </template>

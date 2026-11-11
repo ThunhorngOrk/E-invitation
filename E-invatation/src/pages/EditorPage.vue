@@ -7,13 +7,16 @@ import {
   resetInvitation,
   importInvitation,
   exportInvitation,
+  invitationMeta,
+  uploadImage,
+  fetchRsvps,
+  deleteRsvp,
+  setPublishStatus,
 } from '../stores/invitation'
 import { prepareImage } from '../utils/image'
-import { loadResponses, saveResponses } from '../utils/rsvpStorage'
-import { toKhmerNumber } from '../utils/khmer'
 import { currentUser } from '../stores/auth'
 import { activeTheme } from '../stores/theme'
-import { t } from '../i18n'
+import { formatNumber, locale, pickLocalized, t } from '../i18n'
 import EventFormPage from './EventFormPage.vue'
 
 const tabs = computed(() => [
@@ -28,23 +31,24 @@ const tabs = computed(() => [
   { id: 'responses', label: t('editor.tabs.responses') },
 ])
 
-const people = [
-  { key: 'groom', label: 'កូនកំលោះ' },
-  { key: 'bride', label: 'កូនក្រមុំ' },
-]
+const people = computed(() => [
+  { key: 'groom', label: t('editor.people.groom') },
+  { key: 'bride', label: t('editor.people.bride') },
+])
 
-const tones = [
-  { value: 'wine', label: 'ក្រហមស្រា' },
-  { value: 'gold', label: 'មាស' },
-  { value: 'deep', label: 'ក្រហមជ្រៅ' },
-  { value: 'sand', label: 'ខ្សាច់' },
-  { value: 'rose', label: 'កុលាប' },
-  { value: 'plum', label: 'ព្រហើន' },
-]
+const tones = computed(() => [
+  { value: 'wine', label: t('editor.tones.wine') },
+  { value: 'gold', label: t('editor.tones.gold') },
+  { value: 'deep', label: t('editor.tones.deep') },
+  { value: 'sand', label: t('editor.tones.sand') },
+  { value: 'rose', label: t('editor.tones.rose') },
+  { value: 'plum', label: t('editor.tones.plum') },
+])
 
 const activeTab = ref('event')
 const importInput = ref(null)
 const responses = ref([])
+const publishing = ref(false)
 const toast = reactive({ show: false, message: '', type: 'success' })
 let toastTimer
 
@@ -70,11 +74,11 @@ const statusText = computed(() => {
 
 const sizeText = computed(() => {
   const bytes = storageSize.value
-  if (!bytes) return '០ KB'
+  if (!bytes) return `${formatNumber(0)} KB`
   if (bytes >= 1_048_576) {
-    return `${toKhmerNumber((bytes / 1_048_576).toFixed(1))} MB`
+    return `${formatNumber((bytes / 1_048_576).toFixed(1))} MB`
   }
-  return `${toKhmerNumber(Math.round(bytes / 1024))} KB`
+  return `${formatNumber(Math.round(bytes / 1024))} KB`
 })
 
 function notify(message, type = 'success') {
@@ -92,14 +96,15 @@ async function pickPhoto(event, target) {
   if (!file) return
   try {
     const data = await prepareImage(file)
+    const url = await uploadImage(data, target)
     if (target === 'hero') {
-      invitation.heroImage = data
+      invitation.heroImage = url
     } else {
-      invitation[target].photo = data
+      invitation[target].photo = url
     }
-    notify('បានបន្ថែមរូបថត')
+    notify(t('editor.toasts.photoAdded'))
   } catch {
-    notify('មិនអាចអានរូបថតបានទេ', 'error')
+    notify(t('editor.toasts.photoError'), 'error')
   } finally {
     event.target.value = ''
   }
@@ -110,10 +115,11 @@ async function replaceGalleryPhoto(event, index) {
   if (!file || !invitation.gallery[index]) return
   try {
     const data = await prepareImage(file)
-    invitation.gallery[index].src = data
-    notify('បានធ្វើបច្ចុប្បន្នភាពរូបថត')
+    const url = await uploadImage(data, invitation.gallery[index].caption || 'gallery')
+    invitation.gallery[index].src = url
+    notify(t('editor.toasts.photoUpdated'))
   } catch {
-    notify('មិនអាចអានរូបថតបានទេ', 'error')
+    notify(t('editor.toasts.photoError'), 'error')
   } finally {
     event.target.value = ''
   }
@@ -125,7 +131,7 @@ async function addGalleryPhotos(event) {
 
   const room = 12 - invitation.gallery.length
   if (room <= 0) {
-    notify('អាចបន្ថែមរូបថតបានច្រើនបំផុត ១២ សន្លឹក', 'error')
+    notify(t('editor.toasts.maxPhotos'), 'error')
     event.target.value = ''
     return
   }
@@ -135,22 +141,23 @@ async function addGalleryPhotos(event) {
 
   for (const file of accepted) {
     try {
-      const src = await prepareImage(file)
+      const data = await prepareImage(file)
       const caption = file.name.replace(/\.[^.]+$/, '')
+      const src = await uploadImage(data, caption || 'gallery')
       invitation.gallery.push({ caption: caption || 'អនុស្សាវរីយ៍', tone: 'wine', src })
       added += 1
     } catch {
-      notify('រូបថតមួយចំនួនមិនអាចអានបាន', 'error')
+      notify(t('editor.toasts.somePhotosFailed'), 'error')
     }
   }
 
-  if (added) notify(`បានបន្ថែមរូបថត ${toKhmerNumber(added)} សន្លឹក`)
+  if (added) notify(t('editor.toasts.photosAdded', { n: formatNumber(added) }))
   event.target.value = ''
 }
 
 function addGalleryItem() {
   if (invitation.gallery.length >= 12) {
-    notify('អាចបន្ថែមរូបថតបានច្រើនបំផុត ១២ សន្លឹក', 'error')
+    notify(t('editor.toasts.maxPhotos'), 'error')
     return
   }
   invitation.gallery.push({ caption: 'អនុស្សាវរីយ៍ថ្មី', tone: 'wine', src: '' })
@@ -188,15 +195,15 @@ async function handleImport(event) {
     if (!data || typeof data !== 'object' || !data.groom || !data.bride || !Array.isArray(data.schedule)) {
       throw new Error('invalid')
     }
-    if (!window.confirm('តើអ្នកចង់ជំនួសព័ត៌មានបច្ចុប្បន្នដោយឯកសារនេះមែនទេ?')) {
+    if (!window.confirm(t('editor.confirms.import'))) {
       event.target.value = ''
       return
     }
-    importInvitation(data)
-    refreshResponses()
-    notify('បាននាំចូលព័ត៌មានដោយជោគជ័យ')
+    await importInvitation(data)
+    await refreshResponses()
+    notify(t('editor.toasts.imported'))
   } catch {
-    notify('ឯកសារ JSON មិនត្រឹមត្រូវ', 'error')
+    notify(t('editor.toasts.invalidJson'), 'error')
   } finally {
     event.target.value = ''
   }
@@ -214,40 +221,64 @@ function downloadFile(content, fileName, type) {
 
 function handleExport() {
   downloadFile(exportInvitation(), 'khmer-invitation-backup.json', 'application/json')
-  notify('បានទាញយកឯកសារបម្រុងទុក')
+  notify(t('editor.toasts.exportDone'))
 }
 
-function handleReset() {
-  if (
-    !window.confirm(
-      'តើអ្នកចង់កំណត់ព័ត៌មានទាំងអស់ឡើងវិញមែនទេ? ទិន្នន័យដែលបានកែនឹងបាត់បង់។',
-    )
-  ) {
+async function handleReset() {
+  if (!window.confirm(t('editor.confirms.reset'))) {
     return
   }
-  resetInvitation()
+  await resetInvitation()
   activeTab.value = 'couple'
-  notify('បានកំណត់ទិន្នន័យឡើងវិញ')
+  notify(t('editor.toasts.resetDone'))
 }
 
-function refreshResponses() {
-  responses.value = loadResponses()
+async function refreshResponses() {
+  try {
+    const result = await fetchRsvps()
+    responses.value = result.data.map((item) => ({
+      ...item,
+      createdAt: item.created_at || item.createdAt,
+    }))
+  } catch {
+    responses.value = []
+  }
 }
 
-function removeResponse(index) {
-  const list = loadResponses()
-  list.splice(index, 1)
-  saveResponses(list)
-  responses.value = list
-  notify('បានលុបការឆ្លើយតប')
+async function removeResponse(response) {
+  try {
+    await deleteRsvp(response.id)
+    await refreshResponses()
+    notify(t('editor.toasts.responseDeleted'))
+  } catch {
+    notify(t('editor.toasts.responseDeleteError'), 'error')
+  }
 }
 
-function clearResponses() {
+async function clearResponses() {
   if (!responses.value.length) return
-  if (!window.confirm('តើអ្នកចង់លុបការឆ្លើយតបទាំងអស់មែនទេ?')) return
-  saveResponses([])
-  responses.value = []
-  notify('បានលុបការឆ្លើយតបទាំងអស់')
+  if (!window.confirm(t('editor.confirms.clearResponses'))) return
+  try {
+    await Promise.all(responses.value.map((item) => deleteRsvp(item.id)))
+    await refreshResponses()
+    notify(t('editor.toasts.responsesCleared'))
+  } catch {
+    notify(t('editor.toasts.responseDeleteError'), 'error')
+  }
+}
+
+async function togglePublish() {
+  if (publishing.value) return
+  publishing.value = true
+  const next = invitationMeta.status !== 'published'
+  try {
+    await setPublishStatus(next)
+    notify(next ? t('editor.toasts.published') : t('editor.toasts.unpublished'))
+  } catch {
+    notify(t('editor.toasts.publishError'), 'error')
+  } finally {
+    publishing.value = false
+  }
 }
 
 function csvEscape(value) {
@@ -256,7 +287,7 @@ function csvEscape(value) {
 
 function exportResponses() {
   if (!responses.value.length) {
-    notify('មិនទាន់មានការឆ្លើយតបនៅឡើយទេ', 'error')
+    notify(t('editor.toasts.noResponses'), 'error')
     return
   }
 
@@ -274,14 +305,14 @@ function exportResponses() {
   )
 
   downloadFile(`\uFEFF${[header, ...rows].join('\n')}`, 'rsvp-responses.csv', 'text/csv;charset=utf-8;')
-  notify('បានទាញយកការឆ្លើយតប')
+  notify(t('editor.toasts.responsesExported'))
 }
 
 function formatDate(value) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ''
   try {
-    return date.toLocaleString('km-KH', { dateStyle: 'medium', timeStyle: 'short' })
+    return date.toLocaleString(locale.value === 'km' ? 'km-KH' : 'en-US', { dateStyle: 'medium', timeStyle: 'short' })
   } catch {
     return date.toLocaleString()
   }
@@ -318,6 +349,14 @@ onUnmounted(() => clearTimeout(toastTimer))
             {{ statusText }}
           </span>
           <div class="head-actions">
+            <button
+              class="btn btn-ghost btn-sm"
+              type="button"
+              :disabled="publishing"
+              @click="togglePublish"
+            >
+              {{ invitationMeta.status === 'published' ? t('editor.unpublish') : t('editor.publish') }}
+            </button>
             <button class="btn btn-ghost btn-sm" type="button" @click="handleExport">
               {{ t('editor.exportJson') }}
             </button>
@@ -352,7 +391,7 @@ onUnmounted(() => clearTimeout(toastTimer))
           <span class="tab-dot" aria-hidden="true"></span>
           <span class="tab-label">{{ tab.label }}</span>
           <span v-if="tab.id === 'responses' && responses.length" class="tab-badge">
-            {{ toKhmerNumber(responses.length) }}
+            {{ formatNumber(responses.length) }}
           </span>
         </button>
 
@@ -365,13 +404,13 @@ onUnmounted(() => clearTimeout(toastTimer))
 
       <div class="panels">
         <section v-show="activeTab === 'event'" class="panel event-panel">
-          <EventFormPage embedded @saved="notify('បានរក្សាទុកព័ត៌មានកម្មវិធី')" />
+          <EventFormPage embedded @saved="notify(t('editor.savedEvent'))" />
         </section>
 
         <section v-show="activeTab === 'couple'" class="panel">
           <div class="panel-head">
-            <h2>គូស្វាមីភរិយា</h2>
-            <p>កែឈ្មោះ តួនាទី ឪពុកម្តាយ និងបន្ថែមរូបថតរបស់កូនកំលោះ និងកូនក្រមុំ។</p>
+            <h2>{{ t('editor.coupleTitle') }}</h2>
+            <p>{{ t('editor.coupleText') }}</p>
           </div>
 
           <article v-for="person in people" :key="person.key" class="sub-card">
@@ -392,7 +431,7 @@ onUnmounted(() => clearTimeout(toastTimer))
               <div class="photo-actions">
                 <div class="photo-buttons">
                   <label class="mini-btn">
-                    {{ invitation[person.key].photo ? 'ប្តូររូបថត' : 'បន្ថែមរូបថត' }}
+                    {{ invitation[person.key].photo ? t('editor.changePhoto') : t('editor.addPhoto') }}
                     <input type="file" accept="image/*" @change="pickPhoto($event, person.key)" />
                   </label>
                   <button
@@ -401,42 +440,42 @@ onUnmounted(() => clearTimeout(toastTimer))
                     type="button"
                     @click="invitation[person.key].photo = ''"
                   >
-                    លុបរូបថត
+                    {{ t('editor.removePhoto') }}
                   </button>
                 </div>
-                <p class="hint">រូបថតត្រូវបានបង្រួមស្វ័យប្រវត្តិ ដើម្បីរក្សាទុកក្នុងឧបករណ៍។</p>
+                <p class="hint">{{ t('editor.photoHint') }}</p>
               </div>
             </div>
 
             <div class="grid-2">
               <label class="field">
-                <span>ឈ្មោះជាភាសាខ្មែរ</span>
+                <span>{{ t('editor.nameKm') }}</span>
                 <input v-model="invitation[person.key].nameKh" type="text" />
               </label>
               <label class="field">
-                <span>ឈ្មោះជាភាសាអង់គ្លេស</span>
+                <span>{{ t('editor.nameEn') }}</span>
                 <input v-model="invitation[person.key].nameEn" type="text" />
               </label>
               <label class="field">
-                <span>អក្សរកាត់ (Monogram)</span>
+                <span>{{ t('editor.monogram') }}</span>
                 <input v-model="invitation[person.key].initial" type="text" maxlength="2" />
               </label>
               <label class="field">
-                <span>តួនាទី</span>
+                <span>{{ t('editor.role') }}</span>
                 <input v-model="invitation[person.key].role" type="text" />
               </label>
               <label class="field">
-                <span>ចំណងជើងគ្រួសារ</span>
+                <span>{{ t('editor.familyTitle') }}</span>
                 <input v-model="invitation[person.key].parentsTitle" type="text" />
               </label>
               <label class="field">
-                <span>ឪពុកម្តាយ</span>
+                <span>{{ t('editor.parents') }}</span>
                 <input v-model="invitation[person.key].parents" type="text" />
               </label>
             </div>
 
             <label class="field">
-              <span>អាសយដ្ឋានគ្រួសារ</span>
+              <span>{{ t('editor.familyAddress') }}</span>
               <input v-model="invitation[person.key].parentsAddress" type="text" />
             </label>
           </article>
@@ -444,59 +483,59 @@ onUnmounted(() => clearTimeout(toastTimer))
 
         <section v-show="activeTab === 'invite'" class="panel">
           <div class="panel-head">
-            <h2>សារអញ្ជើញ</h2>
-            <p>កែសម្រួលសារអញ្ជើញ ពាក្យជូនពរ និងសារអរគុណដែលបង្ហាញនៅលើទំព័រ។</p>
+            <h2>{{ t('editor.inviteTitle') }}</h2>
+            <p>{{ t('editor.inviteText') }}</p>
           </div>
 
           <label class="field">
-            <span>ប្រយោគអញ្ជើញសំខាន់</span>
+            <span>{{ t('editor.leadMessage') }}</span>
             <textarea v-model="invitation.invitationText" rows="4"></textarea>
           </label>
 
           <label class="field">
-            <span>សារបន្ថែម</span>
+            <span>{{ t('editor.extraMessage') }}</span>
             <textarea v-model="invitation.invitationSub" rows="3"></textarea>
           </label>
 
           <label class="field">
-            <span>ពាក្យជូនពរ (បង្ហាញនៅផ្នែកខាងក្រោម)</span>
+            <span>{{ t('editor.blessing') }}</span>
             <textarea v-model="invitation.blessing" rows="3"></textarea>
           </label>
 
           <div class="grid-2">
             <label class="field">
-              <span>កាលបរិច្ឆេទឆ្លើយតប</span>
+              <span>{{ t('editor.rsvpDeadline') }}</span>
               <input v-model="invitation.rsvpDeadline" type="text" />
             </label>
             <label class="field">
-              <span>អក្សរតូចលើគម្រប</span>
+              <span>{{ t('editor.heroKicker') }}</span>
               <input v-model="invitation.heroKicker" type="text" />
             </label>
           </div>
 
           <label class="field">
-            <span>សារអរគុណ (បង្ហាញនៅផ្នែកខាងក្រោម)</span>
+            <span>{{ t('editor.thanksText') }}</span>
             <input v-model="invitation.thanksText" type="text" />
           </label>
         </section>
 
         <section v-show="activeTab === 'labels'" class="panel">
           <div class="panel-head">
-            <h2>ចំណងជើងផ្នែក</h2>
-            <p>កែចំណងជើង និងអត្ថបទសង្ខេបនៃផ្នែកនីមួយៗក្នុងទំព័រដោយសេរី។</p>
+            <h2>{{ t('editor.labelsTitle') }}</h2>
+            <p>{{ t('editor.labelsText') }}</p>
           </div>
 
           <div class="sub-card">
             <div class="sub-head">
-              <h3>សារអញ្ជើញ</h3>
+              <h3>{{ t('editor.sectionInvite') }}</h3>
             </div>
             <div class="grid-2">
               <label class="field">
-                <span>អក្សរតូច</span>
+                <span>{{ t('editor.eyebrow') }}</span>
                 <input v-model="invitation.inviteEyebrow" type="text" />
               </label>
               <label class="field">
-                <span>ចំណងជើង</span>
+                <span>{{ t('editor.heading') }}</span>
                 <input v-model="invitation.inviteTitle" type="text" />
               </label>
             </div>
@@ -504,105 +543,105 @@ onUnmounted(() => clearTimeout(toastTimer))
 
           <div class="sub-card">
             <div class="sub-head">
-              <h3>គូស្វាមីភរិយា</h3>
+              <h3>{{ t('editor.sectionCouple') }}</h3>
             </div>
             <div class="grid-2">
               <label class="field">
-                <span>អក្សរតូច</span>
+                <span>{{ t('editor.eyebrow') }}</span>
                 <input v-model="invitation.coupleEyebrow" type="text" />
               </label>
               <label class="field">
-                <span>ចំណងជើង</span>
+                <span>{{ t('editor.heading') }}</span>
                 <input v-model="invitation.coupleTitle" type="text" />
               </label>
             </div>
             <label class="field">
-              <span>អត្ថបទសង្ខេប</span>
+              <span>{{ t('editor.summary') }}</span>
               <textarea v-model="invitation.coupleSub" rows="2"></textarea>
             </label>
           </div>
 
           <div class="sub-card">
             <div class="sub-head">
-              <h3>រាប់ថយក្រោយ</h3>
+              <h3>{{ t('editor.sectionCountdown') }}</h3>
             </div>
             <div class="grid-2">
               <label class="field">
-                <span>អក្សរតូច</span>
+                <span>{{ t('editor.eyebrow') }}</span>
                 <input v-model="invitation.countdownEyebrow" type="text" />
               </label>
               <label class="field">
-                <span>ចំណងជើង</span>
+                <span>{{ t('editor.heading') }}</span>
                 <input v-model="invitation.countdownTitle" type="text" />
               </label>
             </div>
             <label class="field">
-              <span>អត្ថបទនៅពេលឆ្លងផុត</span>
+              <span>{{ t('editor.past') }}</span>
               <input v-model="invitation.countdownPast" type="text" />
             </label>
           </div>
 
           <div class="sub-card">
             <div class="sub-head">
-              <h3>កម្មវិធី</h3>
+              <h3>{{ t('editor.sectionSchedule') }}</h3>
             </div>
             <div class="grid-2">
               <label class="field">
-                <span>អក្សរតូច</span>
+                <span>{{ t('editor.eyebrow') }}</span>
                 <input v-model="invitation.scheduleEyebrow" type="text" />
               </label>
               <label class="field">
-                <span>ចំណងជើង</span>
+                <span>{{ t('editor.heading') }}</span>
                 <input v-model="invitation.scheduleTitle" type="text" />
               </label>
             </div>
             <label class="field">
-              <span>អត្ថបទសង្ខេប</span>
+              <span>{{ t('editor.summary') }}</span>
               <textarea v-model="invitation.scheduleSub" rows="2"></textarea>
             </label>
           </div>
 
           <div class="sub-card">
             <div class="sub-head">
-              <h3>រូបថតអនុស្សាវរីយ៍</h3>
+              <h3>{{ t('editor.sectionGallery') }}</h3>
             </div>
             <div class="grid-2">
               <label class="field">
-                <span>អក្សរតូច</span>
+                <span>{{ t('editor.eyebrow') }}</span>
                 <input v-model="invitation.galleryEyebrow" type="text" />
               </label>
               <label class="field">
-                <span>ចំណងជើង</span>
+                <span>{{ t('editor.heading') }}</span>
                 <input v-model="invitation.galleryTitle" type="text" />
               </label>
             </div>
             <label class="field">
-              <span>អត្ថបទសង្ខេប</span>
+              <span>{{ t('editor.summary') }}</span>
               <textarea v-model="invitation.gallerySub" rows="2"></textarea>
             </label>
           </div>
 
           <div class="sub-card">
             <div class="sub-head">
-              <h3>ទីតាំងពិធី</h3>
+              <h3>{{ t('editor.sectionVenue') }}</h3>
             </div>
             <div class="grid-2">
               <label class="field">
-                <span>អក្សរតូច</span>
+                <span>{{ t('editor.eyebrow') }}</span>
                 <input v-model="invitation.venueEyebrow" type="text" />
               </label>
               <label class="field">
-                <span>ចំណងជើង</span>
+                <span>{{ t('editor.heading') }}</span>
                 <input v-model="invitation.venueTitle" type="text" />
               </label>
             </div>
             <div class="grid-2">
               <label class="field">
-                <span>អត្ថបទសង្ខេប</span>
+                <span>{{ t('editor.summary') }}</span>
                 <textarea v-model="invitation.venueSub" rows="2"></textarea>
               </label>
               <label class="field">
-                <span>ស្លាកផែនទី</span>
+                <span>{{ t('editor.mapBadge') }}</span>
                 <input v-model="invitation.mapBadge" type="text" />
               </label>
             </div>
@@ -610,15 +649,15 @@ onUnmounted(() => clearTimeout(toastTimer))
 
           <div class="sub-card">
             <div class="sub-head">
-              <h3>ឆ្លើយតបការអញ្ជើញ</h3>
+              <h3>{{ t('editor.sectionRsvp') }}</h3>
             </div>
             <div class="grid-2">
               <label class="field">
-                <span>អក្សរតូច</span>
+                <span>{{ t('editor.eyebrow') }}</span>
                 <input v-model="invitation.rsvpEyebrow" type="text" />
               </label>
               <label class="field">
-                <span>ចំណងជើង</span>
+                <span>{{ t('editor.heading') }}</span>
                 <input v-model="invitation.rsvpTitle" type="text" />
               </label>
             </div>
@@ -627,86 +666,86 @@ onUnmounted(() => clearTimeout(toastTimer))
 
         <section v-show="activeTab === 'date'" class="panel">
           <div class="panel-head">
-            <h2>ថ្ងៃ និងទីតាំង</h2>
-            <p>កែកាលបរិច្ឆេទ ថ្ងៃចន្ទគតិ និងព័ត៌មានទីតាំងពិធី។</p>
+            <h2>{{ t('editor.dateTitle') }}</h2>
+            <p>{{ t('editor.dateText') }}</p>
           </div>
 
           <div class="grid-2">
             <label class="field">
-              <span>ថ្ងៃ និងម៉ោងពិធី</span>
+              <span>{{ t('editor.dateTime') }}</span>
               <input v-model="dateInput" type="datetime-local" />
             </label>
             <label class="field">
-              <span>ថ្ងៃជាភាសាខ្មែរ</span>
+              <span>{{ t('editor.dateKh') }}</span>
               <input v-model="invitation.dateKh" type="text" />
             </label>
             <label class="field">
-              <span>ថ្ងៃជាភាសាអង់គ្លេស</span>
+              <span>{{ t('editor.dateEn') }}</span>
               <input v-model="invitation.dateEn" type="text" />
             </label>
             <label class="field">
-              <span>ថ្ងៃចន្ទគតិ</span>
+              <span>{{ t('editor.lunar') }}</span>
               <input v-model="invitation.lunarKh" type="text" />
             </label>
             <label class="field">
-              <span>ម៉ោងចាប់ផ្តើម</span>
+              <span>{{ t('editor.startTime') }}</span>
               <input v-model="invitation.eventTime" type="time" />
             </label>
           </div>
 
           <div class="block-divider"></div>
-          <h3 class="block-title">ទីតាំងពិធី</h3>
+          <h3 class="block-title">{{ t('editor.venueBlockTitle') }}</h3>
 
           <div class="grid-2">
             <label class="field">
-              <span>ឈ្មោះទីតាំង</span>
+              <span>{{ t('editor.venueName') }}</span>
               <input v-model="invitation.venue.name" type="text" />
             </label>
             <label class="field">
-              <span>ឈ្មោះជាភាសាអង់គ្លេស</span>
+              <span>{{ t('editor.venueNameEn') }}</span>
               <input v-model="invitation.venue.nameEn" type="text" />
             </label>
           </div>
 
           <label class="field">
-            <span>អាសយដ្ឋាន</span>
+            <span>{{ t('editor.address') }}</span>
             <textarea v-model="invitation.venue.address" rows="2"></textarea>
           </label>
 
           <label class="field">
-            <span>សារបន្ថែមអំពីទីតាំង</span>
+            <span>{{ t('editor.venueNote') }}</span>
             <textarea v-model="invitation.venue.note" rows="2"></textarea>
           </label>
 
           <label class="field">
-            <span>ពាក្យគន្លឹះសម្រាប់ Google Maps</span>
+            <span>{{ t('editor.mapQuery') }}</span>
             <input v-model="invitation.venue.mapQuery" type="text" />
-            <small>ប្រើឈ្មោះទីតាំង ឬអាសយដ្ឋាន ដើម្បីបើកផែនទីបានត្រឹមត្រូវ។</small>
+            <small>{{ t('editor.mapHint') }}</small>
           </label>
         </section>
 
         <section v-show="activeTab === 'schedule'" class="panel">
           <div class="panel-head-row">
             <div class="panel-head">
-              <h2>កម្មវិធីប្រពៃណី</h2>
-              <p>បន្ថែម លុប ឬរៀបចំលំដាប់នៃពិធីនីមួយៗ។</p>
+              <h2>{{ t('editor.scheduleBlockTitle') }}</h2>
+              <p>{{ t('editor.scheduleBlockText') }}</p>
             </div>
             <button class="btn btn-gold btn-sm" type="button" @click="addSchedule">
-              + បន្ថែមពិធី
+              {{ t('editor.addSchedule') }}
             </button>
           </div>
 
-          <p v-if="!invitation.schedule.length" class="empty">មិនទាន់មានកម្មវិធីនៅឡើយទេ។</p>
+          <p v-if="!invitation.schedule.length" class="empty">{{ t('editor.emptySchedule') }}</p>
 
           <article v-for="(item, index) in invitation.schedule" :key="index" class="item-card">
             <div class="item-top">
-              <span class="item-index">{{ toKhmerNumber(index + 1) }}</span>
+              <span class="item-index">{{ formatNumber(index + 1) }}</span>
               <div class="item-actions">
                 <button
                   class="icon-btn"
                   type="button"
                   :disabled="index === 0"
-                  aria-label="ផ្លាស់ឡើងលើ"
+                  :aria-label="t('editor.moveUp')"
                   @click="moveSchedule(index, -1)"
                 >
                   ↑
@@ -715,7 +754,7 @@ onUnmounted(() => clearTimeout(toastTimer))
                   class="icon-btn"
                   type="button"
                   :disabled="index === invitation.schedule.length - 1"
-                  aria-label="ផ្លាស់ចុះក្រោម"
+                  :aria-label="t('editor.moveDown')"
                   @click="moveSchedule(index, 1)"
                 >
                   ↓
@@ -723,7 +762,7 @@ onUnmounted(() => clearTimeout(toastTimer))
                 <button
                   class="icon-btn danger"
                   type="button"
-                  aria-label="លុបពិធី"
+                  :aria-label="t('editor.removeSchedule')"
                   @click="removeSchedule(index)"
                 >
                   ✕
@@ -733,17 +772,17 @@ onUnmounted(() => clearTimeout(toastTimer))
 
             <div class="grid-time">
               <label class="field">
-                <span>ម៉ោង</span>
+                <span>{{ t('editor.time') }}</span>
                 <input v-model="item.time" type="time" />
               </label>
               <label class="field">
-                <span>ចំណងជើងពិធី</span>
+                <span>{{ t('editor.activityTitle') }}</span>
                 <input v-model="item.title" type="text" />
               </label>
             </div>
 
             <label class="field">
-              <span>ពិពណ៌នា</span>
+              <span>{{ t('editor.description') }}</span>
               <textarea v-model="item.desc" rows="2"></textarea>
             </label>
           </article>
@@ -752,21 +791,21 @@ onUnmounted(() => clearTimeout(toastTimer))
         <section v-show="activeTab === 'gallery'" class="panel">
           <div class="panel-head-row">
             <div class="panel-head">
-              <h2>រូបថតអនុស្សាវរីយ៍</h2>
-              <p>បន្ថែមរូបថតពិត ឬទុកជាក្រឡាពណ៌លម្អ។ អតិបរមា ១២ សន្លឹក។</p>
+              <h2>{{ t('editor.galleryBlockTitle') }}</h2>
+              <p>{{ t('editor.galleryBlockText') }}</p>
             </div>
             <div class="head-buttons">
               <label class="mini-btn primary">
-                បន្ថែមរូបថត
+                {{ t('editor.addGalleryPhotos') }}
                 <input type="file" accept="image/*" multiple @change="addGalleryPhotos" />
               </label>
               <button class="mini-btn" type="button" @click="addGalleryItem">
-                + ក្រឡាទទេ
+                {{ t('editor.addEmptyTile') }}
               </button>
             </div>
           </div>
 
-          <p v-if="!invitation.gallery.length" class="empty">មិនទាន់មានរូបថតនៅឡើយទេ។</p>
+          <p v-if="!invitation.gallery.length" class="empty">{{ t('editor.emptyGallery') }}</p>
 
           <div class="gallery-edit">
             <article v-for="(item, index) in invitation.gallery" :key="index" class="gallery-card">
@@ -780,16 +819,16 @@ onUnmounted(() => clearTimeout(toastTimer))
                   />
                   <circle cx="32" cy="44" r="1.8" fill="currentColor" opacity=".7" />
                 </svg>
-                <span class="gallery-index">{{ toKhmerNumber(index + 1, 2) }}</span>
+                <span class="gallery-index">{{ formatNumber(index + 1, 2) }}</span>
               </div>
 
               <label class="field">
-                <span>ចំណងជើង</span>
+                <span>{{ t('editor.caption') }}</span>
                 <input v-model="item.caption" type="text" />
               </label>
 
               <label v-if="!item.src" class="field">
-                <span>ពណ៌ក្រឡា</span>
+                <span>{{ t('editor.tone') }}</span>
                 <select v-model="item.tone">
                   <option v-for="tone in tones" :key="tone.value" :value="tone.value">
                     {{ tone.label }}
@@ -799,14 +838,14 @@ onUnmounted(() => clearTimeout(toastTimer))
 
               <div class="gallery-actions">
                 <label class="mini-btn">
-                  {{ item.src ? 'ប្តូររូបថត' : 'បន្ថែមរូបថត' }}
+                  {{ item.src ? t('editor.changePhoto') : t('editor.addPhoto') }}
                   <input type="file" accept="image/*" @change="replaceGalleryPhoto($event, index)" />
                 </label>
                 <button v-if="item.src" class="mini-btn" type="button" @click="item.src = ''">
-                  លុបរូបថត
+                  {{ t('editor.removePhoto') }}
                 </button>
                 <button class="mini-btn danger" type="button" @click="removeGallery(index)">
-                  លុបក្រឡា
+                  {{ t('editor.removeTile') }}
                 </button>
               </div>
             </article>
@@ -815,8 +854,8 @@ onUnmounted(() => clearTimeout(toastTimer))
 
         <section v-show="activeTab === 'design'" class="panel">
           <div class="panel-head">
-            <h2>រចនា</h2>
-            <p>បន្ថែមរូបថតគម្របសម្រាប់ទំព័រដំបូង និងមើលការមើលជាមុនរបស់គម្រប។</p>
+            <h2>{{ t('editor.designTitle') }}</h2>
+            <p>{{ t('editor.designText') }}</p>
           </div>
 
           <div class="design-grid">
@@ -832,22 +871,22 @@ onUnmounted(() => clearTimeout(toastTimer))
                   <circle cx="32" cy="44" r="1.8" fill="currentColor" opacity=".7" />
                   <path d="M20 52h24" stroke="currentColor" stroke-width="1" opacity=".5" />
                 </svg>
-                <p>មិនទាន់មានរូបថតគម្រប</p>
+                <p>{{ t('editor.noCover') }}</p>
               </div>
               <div class="cover-text">
                 <span>{{ invitation.heroKicker }}</span>
-                <strong>{{ invitation.groom.nameKh }} និង {{ invitation.bride.nameKh }}</strong>
+                <strong>{{ pickLocalized(invitation.groom.nameKh, invitation.groom.nameEn) }} {{ t('invitation.and') }} {{ pickLocalized(invitation.bride.nameKh, invitation.bride.nameEn) }}</strong>
               </div>
             </div>
 
             <div class="design-info">
-              <h3>រូបថតគម្រប</h3>
+              <h3>{{ t('editor.coverTitle') }}</h3>
               <p>
-                រូបថតនេះនឹងបង្ហាញពីក្រោយផ្ទាំងអញ្ជើញនៅលើទំព័រដំបូង។ សូមជ្រើសរើសរូបថតដែលមានពន្លឺល្អ។
+                {{ t('editor.coverText') }}
               </p>
               <div class="photo-buttons">
                 <label class="mini-btn primary">
-                  {{ invitation.heroImage ? 'ប្តូររូបថត' : 'បន្ថែមរូបថត' }}
+                  {{ invitation.heroImage ? t('editor.changePhoto') : t('editor.addPhoto') }}
                   <input type="file" accept="image/*" @change="pickPhoto($event, 'hero')" />
                 </label>
                 <button
@@ -856,20 +895,20 @@ onUnmounted(() => clearTimeout(toastTimer))
                   type="button"
                   @click="invitation.heroImage = ''"
                 >
-                  លុបរូបថត
+                  {{ t('editor.removePhoto') }}
                 </button>
               </div>
 
               <div class="design-note">
-                <p>រចនាប័ទ្មបច្ចុប្បន្ន</p>
-                <span>ពណ៌ និងអារម្មណ៍ទាំងមូលកំពុងប្រើ “{{ activeTheme.name }}”។</span>
-                <a class="mini-btn primary theme-link" href="#/styles">ប្តូររចនាប័ទ្ម</a>
+                <p>{{ t('editor.currentStyle') }}</p>
+                <span>{{ t('editor.styleInUse', { name: pickLocalized(activeTheme.name, activeTheme.nameEn) }) }}</span>
+                <a class="mini-btn primary theme-link" href="#/styles">{{ t('editor.changeStyle') }}</a>
               </div>
 
               <div class="design-note">
-                <p>តន្ត្រី</p>
+                <p>{{ t('editor.musicTitle') }}</p>
                 <span>
-                  តន្ត្រីខ្នាតតូចនឹងលេងនៅពេលភ្ញៀវចុចប៊ូតុងតន្ត្រីនៅជ្រុងខាងក្រោមនៃទំព័រ។
+                  {{ t('editor.musicText') }}
                 </span>
               </div>
             </div>
@@ -878,43 +917,43 @@ onUnmounted(() => clearTimeout(toastTimer))
 
         <section v-show="activeTab === 'responses'" class="panel">
           <div class="panel-head">
-            <h2>ការឆ្លើយតបពីភ្ញៀវ</h2>
-            <p>ព័ត៌មាននេះរក្សាទុកក្នុងឧបករណ៍នេះ។ សូមនាំចេញ CSV ដើម្បីរក្សាទុក ឬបោះពុម្ព។</p>
+            <h2>{{ t('editor.responsesTitle') }}</h2>
+            <p>{{ t('editor.responsesText') }}</p>
           </div>
 
           <div class="response-summary">
             <div class="stat">
-              <span>ឆ្លើយតបសរុប</span>
-              <strong>{{ toKhmerNumber(responses.length) }}</strong>
+              <span>{{ t('editor.totalResponses') }}</span>
+              <strong>{{ formatNumber(responses.length) }}</strong>
             </div>
             <div class="stat">
-              <span>អញ្ជើញចូលរួម</span>
-              <strong>{{ toKhmerNumber(confirmed.length) }}</strong>
+              <span>{{ t('editor.attending') }}</span>
+              <strong>{{ formatNumber(confirmed.length) }}</strong>
             </div>
             <div class="stat">
-              <span>ភ្ញៀវសរុប</span>
-              <strong>{{ toKhmerNumber(totalGuests) }}</strong>
+              <span>{{ t('editor.totalGuests') }}</span>
+              <strong>{{ formatNumber(totalGuests) }}</strong>
             </div>
             <div class="stat">
-              <span>មិនអាចចូលរួម</span>
-              <strong>{{ toKhmerNumber(responses.length - confirmed.length) }}</strong>
+              <span>{{ t('editor.declined') }}</span>
+              <strong>{{ formatNumber(responses.length - confirmed.length) }}</strong>
             </div>
           </div>
 
           <div class="response-toolbar">
-            <button class="mini-btn" type="button" @click="refreshResponses">ផ្ទុកឡើងវិញ</button>
-            <button class="mini-btn" type="button" @click="exportResponses">ទាញយក CSV</button>
+            <button class="mini-btn" type="button" @click="refreshResponses">{{ t('editor.refresh') }}</button>
+            <button class="mini-btn" type="button" @click="exportResponses">{{ t('editor.downloadCsv') }}</button>
             <button
               class="mini-btn danger"
               type="button"
               :disabled="!responses.length"
               @click="clearResponses"
             >
-              លុបទាំងអស់
+              {{ t('editor.clearAll') }}
             </button>
           </div>
 
-          <p v-if="!responses.length" class="empty">មិនទាន់មានការឆ្លើយតបនៅឡើយទេ។</p>
+          <p v-if="!responses.length" class="empty">{{ t('editor.emptyResponses') }}</p>
 
           <ul v-else class="response-list">
             <li
@@ -926,20 +965,20 @@ onUnmounted(() => clearTimeout(toastTimer))
                 <div>
                   <strong>{{ response.name }}</strong>
                   <span class="response-badge" :class="response.attendance">
-                    {{ response.attendance === 'yes' ? 'អញ្ជើញចូលរួម' : 'មិនអាចចូលរួម' }}
+                    {{ response.attendance === 'yes' ? t('editor.attending') : t('editor.declined') }}
                   </span>
                 </div>
                 <button
                   class="icon-btn danger"
                   type="button"
-                  aria-label="លុបការឆ្លើយតប"
-                  @click="removeResponse(index)"
+                  :aria-label="t('editor.removeResponse')"
+                  @click="removeResponse(response)"
                 >
                   ✕
                 </button>
               </div>
               <p class="response-meta">
-                ភ្ញៀវ {{ toKhmerNumber(response.guests || 1) }} នាក់ • {{ formatDate(response.createdAt) }}
+                {{ t('editor.guestCount', { n: formatNumber(response.guests || 1) }) }} • {{ formatDate(response.createdAt) }}
               </p>
               <p v-if="response.message" class="response-message">“{{ response.message }}”</p>
             </li>

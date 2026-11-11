@@ -1,7 +1,6 @@
-import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { locale, t } from '../i18n'
-
-const DRAFT_KEY = 'e-invitation-event-draft-v1'
+import { invitation, persistInvitation, saveState } from '../stores/invitation'
 
 export const CATEGORY_VALUES = ['wedding', 'engagement', 'birthday', 'corporate', 'religious']
 
@@ -86,54 +85,40 @@ function formatSaved(iso) {
 }
 
 export function useEventDraft() {
-  const form = reactive(createForm())
+  const form = reactive(normalizeForm(invitation.eventForm))
   const errors = reactive({})
-  const saving = ref(false)
+  const saving = computed(() => saveState.value === 'saving')
   const savedAt = ref('')
-  const restored = ref(false)
+  const restored = ref(Boolean(invitation.eventForm))
   const submitted = ref(false)
-  let saveTimer
+  let syncTimer
 
-  function persist() {
-    try {
-      const timestamp = new Date().toISOString()
-      localStorage.setItem(
-        DRAFT_KEY,
-        JSON.stringify({ form, savedAt: timestamp, submitted: submitted.value }),
-      )
-      savedAt.value = timestamp
-      saving.value = false
-      return true
-    } catch {
-      saving.value = false
-      return false
-    }
+  function syncDraft() {
+    invitation.eventForm = normalizeForm(form)
+  }
+
+  async function persist() {
+    clearTimeout(syncTimer)
+    syncDraft()
+    const ok = await persistInvitation()
+    if (ok) savedAt.value = new Date().toISOString()
+    return ok
   }
 
   function loadDraft() {
-    try {
-      const raw = localStorage.getItem(DRAFT_KEY)
-      if (!raw) return false
-      const data = JSON.parse(raw)
-      const draft = data?.form || data
-      Object.assign(form, normalizeForm(draft))
-      if (data?.savedAt) savedAt.value = data.savedAt
-      submitted.value = Boolean(data?.submitted)
-      restored.value = true
-      return true
-    } catch {
-      return false
-    }
+    const draft = invitation.eventForm
+    if (!draft || typeof draft !== 'object') return false
+    Object.assign(form, normalizeForm(draft))
+    restored.value = true
+    return true
   }
 
   function clearDraft() {
-    try {
-      localStorage.removeItem(DRAFT_KEY)
-    } catch {
-      return
-    }
+    Object.assign(form, createForm())
+    invitation.eventForm = null
     savedAt.value = ''
     submitted.value = false
+    restored.value = false
   }
 
   function addDay() {
@@ -191,18 +176,11 @@ export function useEventDraft() {
   watch(
     form,
     () => {
-      saving.value = true
-      clearTimeout(saveTimer)
-      saveTimer = setTimeout(() => {
-        persist()
-      }, 600)
+      clearTimeout(syncTimer)
+      syncTimer = setTimeout(syncDraft, 300)
     },
     { deep: true },
   )
-
-  onBeforeUnmount(() => {
-    clearTimeout(saveTimer)
-  })
 
   return {
     form,

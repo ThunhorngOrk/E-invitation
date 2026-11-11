@@ -1,7 +1,10 @@
 import { reactive, ref, watch } from 'vue'
 import { defaultInvitation } from '../data/invitation'
-
-const STORAGE_KEY = 'khmer-invitation-content-v2'
+import { api } from '../api/client'
+import { isAuthenticated } from './auth'
+import { activeThemeId, applyTheme } from './theme'
+import { dataUrlToBlob } from '../utils/image'
+import { t } from '../i18n'
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value))
@@ -9,7 +12,9 @@ function clone(value) {
 
 function mergeWithDefaults(saved) {
   const base = clone(defaultInvitation)
-  if (!saved || typeof saved !== 'object') return base
+  if (!saved || typeof saved !== 'object') {
+    return { ...base, theme: '', eventForm: null }
+  }
 
   const merged = { ...base, ...saved }
   merged.venue = { ...base.venue, ...(saved.venue || {}) }
@@ -19,6 +24,8 @@ function mergeWithDefaults(saved) {
   if (!Array.isArray(merged.schedule)) merged.schedule = base.schedule
   if (!Array.isArray(merged.gallery)) merged.gallery = base.gallery
   if (typeof merged.heroImage !== 'string') merged.heroImage = ''
+  if (typeof merged.theme !== 'string') merged.theme = ''
+  if (!merged.eventForm || typeof merged.eventForm !== 'object') merged.eventForm = null
 
   merged.schedule = merged.schedule.map((item) => ({
     time: item?.time || '09:00',
@@ -35,44 +42,167 @@ function mergeWithDefaults(saved) {
   return merged
 }
 
-function loadSaved() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw)
-    return parsed && typeof parsed === 'object' ? parsed : null
-  } catch {
-    return null
-  }
-}
+export const invitation = reactive(mergeWithDefaults(null))
 
-const savedContent = loadSaved()
-
-export const invitation = reactive(mergeWithDefaults(savedContent))
-export const saveState = ref(savedContent ? 'saved' : 'idle')
+export const saveState = ref('idle')
 export const storageSize = ref(0)
-export const STORAGE_KEY_INVITATION = STORAGE_KEY
+
+export const invitationMeta = reactive({
+  id: null,
+  slug: '',
+  status: 'draft',
+  title: '',
+  loaded: false,
+})
 
 let saveTimer
-let currentSize = 0
+let applyingRemote = false
+let loading = false
 
-if (savedContent) {
+function updateSize() {
   try {
-    currentSize = new Blob([JSON.stringify(invitation)]).size
+    storageSize.value = new Blob([JSON.stringify(invitation)]).size
   } catch {
-    currentSize = 0
+    storageSize.value = 0
   }
-  storageSize.value = currentSize
 }
 
-export function persistInvitation() {
+function titleFromContent() {
+  const eventName = invitation.eventForm?.eventName
+  if (typeof eventName === 'string' && eventName.trim()) return eventName.trim()
+
+  const groom = invitation.groom?.nameKh?.trim()
+  const bride = invitation.bride?.nameKh?.trim()
+  if (groom || bride) return [groom, bride].filter(Boolean).join(' & ')
+
+  return invitation.heroKicker?.trim() || 'ការអញ្ជើញ'
+}
+
+function applyMeta(resource) {
+  if (!resource) return
+  invitationMeta.id = resource.id ?? invitationMeta.id
+  invitationMeta.slug = resource.slug ?? invitationMeta.slug
+  invitationMeta.status = resource.status ?? invitationMeta.status
+  invitationMeta.title = resource.title ?? invitationMeta.title
+}
+
+function applyContent(content) {
+  const merged = mergeWithDefaults(content)
+  Object.keys(invitation).forEach((key) => {
+    delete invitation[key]
+  })
+  Object.assign(invitation, merged)
+}
+
+function schedulePersist() {
+  if (!isAuthenticated.value || !invitationMeta.loaded) return
+  saveState.value = 'saving'
+  clearTimeout(saveTimer)
+  saveTimer = setTimeout(() => {
+    persistInvitation()
+  }, 600)
+}
+
+async function createInvitation() {
   saveState.value = 'saving'
   try {
-    const data = JSON.stringify(invitation)
-    localStorage.setItem(STORAGE_KEY, data)
-    currentSize = new Blob([data]).size
-    storageSize.value = currentSize
+    const payload = await api.post('/invitations', {
+      title: titleFromContent(),
+      content: clone(invitation),
+      status: 'draft',
+    })
+    const resource = api.unwrap(payload)
+    applyMeta(resource)
+    invitationMeta.loaded = true
     saveState.value = 'saved'
+    updateSize()
+    return resource
+  } catch (error) {
+    saveState.value = 'error'
+    throw error
+  }
+}
+
+export async function loadInvitation() {
+  if (!isAuthenticated.value) {
+    clearInvitationState()
+    return false
+  }
+  if (loading || invitationMeta.loaded) return true
+
+  loading = true
+  saveState.value = 'saving'
+  try {
+    const payload = await api.get('/invitations')
+    const list = api.unwrap(payload)
+    const items = Array.isArray(list) ? list : []
+
+    if (items.length) {
+      const resource = items[0]
+      applyingRemote = true
+      applyMeta(resource)
+      applyContent(resource.content || {})
+      if (resource.content?.theme) {
+        applyTheme(resource.content.theme)
+      } else if (activeThemeId.value) {
+        invitation.theme = activeThemeId.value
+      }
+      applyingRemote = false
+      invitationMeta.loaded = true
+      saveState.value = 'saved'
+      updateSize()
+
+      if (!resource.content?.theme && activeThemeId.value) {
+        persistInvitation()
+      }
+
+      return true
+    }
+
+    invitationMeta.loaded = true
+    await createInvitation()
+    return true
+  } catch {
+    applyingRemote = false
+    saveState.value = 'error'
+    return false
+  } finally {
+    loading = false
+  }
+}
+
+export async function persistInvitation() {
+  if (!isAuthenticated.value) {
+    saveState.value = 'idle'
+    return false
+  }
+
+  if (!invitationMeta.id) {
+    try {
+      await createInvitation()
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  clearTimeout(saveTimer)
+  saveState.value = 'saving'
+
+  if (activeThemeId.value && invitation.theme !== activeThemeId.value) {
+    applyingRemote = true
+    invitation.theme = activeThemeId.value
+    applyingRemote = false
+  }
+
+  try {
+    const payload = await api.patch(`/invitations/${invitationMeta.slug}`, {
+      title: titleFromContent(),
+      content: clone(invitation),
+    })
+    applyMeta(api.unwrap(payload))
+    saveState.value = 'saved'
+    updateSize()
     return true
   } catch {
     saveState.value = 'error'
@@ -80,35 +210,24 @@ export function persistInvitation() {
   }
 }
 
-watch(
-  invitation,
-  () => {
-    clearTimeout(saveTimer)
-    saveTimer = setTimeout(persistInvitation, 350)
-  },
-  { deep: true },
-)
-
-export function resetInvitation() {
-  clearTimeout(saveTimer)
-  const defaults = clone(defaultInvitation)
+export async function resetInvitation() {
+  applyingRemote = true
+  const defaults = mergeWithDefaults(null)
   Object.keys(invitation).forEach((key) => {
     delete invitation[key]
   })
   Object.assign(invitation, defaults)
-  localStorage.removeItem(STORAGE_KEY)
-  saveState.value = 'saved'
-  storageSize.value = 0
+  applyingRemote = false
+  updateSize()
+  return persistInvitation()
 }
 
-export function importInvitation(data) {
-  const merged = mergeWithDefaults(data)
-  clearTimeout(saveTimer)
-  Object.keys(invitation).forEach((key) => {
-    delete invitation[key]
-  })
-  Object.assign(invitation, merged)
-  persistInvitation()
+export async function importInvitation(data) {
+  applyingRemote = true
+  applyContent(data)
+  applyingRemote = false
+  updateSize()
+  return persistInvitation()
 }
 
 export function exportInvitation() {
@@ -118,6 +237,107 @@ export function exportInvitation() {
 export function invitationSnapshot() {
   return clone(invitation)
 }
+
+export async function uploadImage(dataUrl, caption = '') {
+  if (!isAuthenticated.value) {
+    throw new Error(t('auth.errors.loginRequired'))
+  }
+  if (!invitationMeta.id) {
+    await createInvitation()
+  }
+
+  const blob = dataUrlToBlob(dataUrl)
+  const payload = await api.upload(
+    `/invitations/${invitationMeta.slug}/photos`,
+    blob,
+    'photo',
+    { caption },
+  )
+  const photo = api.unwrap(payload)
+  return photo?.url || ''
+}
+
+export async function setPublishStatus(published) {
+  if (!invitationMeta.id) {
+    await createInvitation()
+  }
+  const action = published ? 'publish' : 'unpublish'
+  const payload = await api.post(`/invitations/${invitationMeta.slug}/${action}`)
+  applyMeta(api.unwrap(payload))
+  return invitationMeta.status
+}
+
+export async function fetchRsvps() {
+  if (!invitationMeta.id) {
+    return { data: [], meta: { total_responses: 0, attending: 0, declined: 0, total_guests: 0 } }
+  }
+  const payload = await api.get(`/invitations/${invitationMeta.slug}/rsvps`)
+  const list = api.unwrap(payload)
+  return {
+    data: Array.isArray(list) ? list : [],
+    meta: payload?.meta || {
+      total_responses: Array.isArray(list) ? list.length : 0,
+      attending: 0,
+      declined: 0,
+      total_guests: 0,
+    },
+  }
+}
+
+export async function deleteRsvp(id) {
+  if (!invitationMeta.id) return
+  await api.delete(`/invitations/${invitationMeta.slug}/rsvps/${id}`)
+}
+
+export async function submitRsvp(payload) {
+  if (!invitationMeta.slug || invitationMeta.status !== 'published') {
+    throw new Error(t('auth.errors.publishRequired'))
+  }
+  const response = await api.post(
+    `/invitations/${invitationMeta.slug}/rsvps`,
+    payload,
+    { auth: false },
+  )
+  return api.unwrap(response)
+}
+
+export function clearInvitationState() {
+  clearTimeout(saveTimer)
+  applyingRemote = true
+  Object.keys(invitation).forEach((key) => {
+    delete invitation[key]
+  })
+  Object.assign(invitation, mergeWithDefaults(null))
+  applyingRemote = false
+  invitationMeta.id = null
+  invitationMeta.slug = ''
+  invitationMeta.status = 'draft'
+  invitationMeta.title = ''
+  invitationMeta.loaded = false
+  saveState.value = 'idle'
+  storageSize.value = 0
+}
+
+watch(
+  invitation,
+  () => {
+    if (applyingRemote) return
+    updateSize()
+    schedulePersist()
+  },
+  { deep: true, flush: 'sync' },
+)
+
+watch(
+  activeThemeId,
+  (id) => {
+    if (applyingRemote || !id) return
+    if (invitation.theme !== id) {
+      invitation.theme = id
+    }
+  },
+  { flush: 'sync' },
+)
 
 window.addEventListener('beforeunload', () => {
   if (saveState.value === 'saving') persistInvitation()

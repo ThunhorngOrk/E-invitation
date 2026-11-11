@@ -4,6 +4,7 @@ import { themes } from '../data/themes'
 import { activeThemeId, applyTheme } from '../stores/theme'
 import { currentUser } from '../stores/auth'
 import { invitation } from '../stores/invitation'
+import { pickLocalized, t } from '../i18n'
 
 const selected = ref(activeThemeId.value || 'classic')
 
@@ -28,10 +29,9 @@ function continueToEditor() {
       <div class="head-inner">
         <div>
           <p class="brand-eyebrow">E-invitation</p>
-          <h1>ជ្រើសរើសរចនាប័ទ្ម</h1>
+          <h1>{{ t('styles.title') }}</h1>
           <p class="brand-sub">
-            សួស្តី {{ currentUser?.name || 'អ្នកប្រើប្រាស់' }} — ជ្រើសរើសពណ៌ និងអារម្មណ៍សម្រាប់ការអញ្ជើញរបស់អ្នក។
-            អ្នកអាចប្តូរវាបានគ្រប់ពេលពីទំព័រកែប្រែ។
+            {{ t('styles.sub', { name: currentUser?.name || t('common.user') }) }}
           </p>
         </div>
       </div>
@@ -52,16 +52,16 @@ function continueToEditor() {
             <div class="preview-hero">
               <span class="preview-kicker">{{ invitation.heroKicker }}</span>
               <span class="preview-names">
-                {{ invitation.groom.nameKh }}
-                <i>និង</i>
-                {{ invitation.bride.nameKh }}
+                {{ pickLocalized(invitation.groom.nameKh, invitation.groom.nameEn) }}
+                <i>{{ t('common.and') }}</i>
+                {{ pickLocalized(invitation.bride.nameKh, invitation.bride.nameEn) }}
               </span>
               <span class="preview-line" aria-hidden="true"></span>
-              <span class="preview-date">{{ invitation.dateKh }}</span>
+              <span class="preview-date">{{ pickLocalized(invitation.dateKh, invitation.dateEn) }}</span>
             </div>
             <div class="preview-body">
               <span class="preview-dot" aria-hidden="true"></span>
-              <span class="preview-label">កម្មវិធីប្រពៃណី</span>
+              <span class="preview-label">{{ t('styles.previewLabel') }}</span>
               <span class="preview-bar" aria-hidden="true"></span>
             </div>
             <span class="check" aria-hidden="true">
@@ -79,7 +79,7 @@ function continueToEditor() {
 
           <div class="card-foot">
             <div>
-              <h2>{{ theme.name }}</h2>
+              <h2>{{ pickLocalized(theme.name, theme.nameEn) }}</h2>
               <p class="card-en">{{ theme.nameEn }}</p>
             </div>
             <div class="swatches" aria-hidden="true">
@@ -91,17 +91,17 @@ function continueToEditor() {
               ></span>
             </div>
           </div>
-          <p class="card-desc">{{ theme.description }}</p>
+          <p class="card-desc">{{ pickLocalized(theme.description, theme.descriptionEn) }}</p>
         </button>
       </div>
 
       <div class="selection-bar">
         <div class="selection-info">
-          <span>រចនាប័ទ្មដែលបានជ្រើសរើស</span>
-          <strong>{{ selectedTheme.name }}</strong>
+          <span>{{ t('styles.selected') }}</span>
+          <strong>{{ pickLocalized(selectedTheme.name, selectedTheme.nameEn) }}</strong>
         </div>
         <button class="btn btn-gold" type="button" @click="continueToEditor">
-          បន្តបំពេញព័ត៌មានការអញ្ជើញ
+          {{ t('styles.continue') }}
         </button>
       </div>
     </main>

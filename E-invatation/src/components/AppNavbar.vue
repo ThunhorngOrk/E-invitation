@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue'
 import Icon from './event/Icon.vue'
 import { currentUser, isAuthenticated, logout } from '../stores/auth'
+import { clearInvitationState } from '../stores/invitation'
 import { isDark, toggleMode } from '../stores/mode'
 import { t, toggleLocale } from '../i18n'
 
@@ -22,9 +23,10 @@ function close() {
   open.value = false
 }
 
-function handleLogout() {
+async function handleLogout() {
   if (!window.confirm(t('nav.logoutConfirm'))) return
-  logout()
+  await logout()
+  clearInvitationState()
   close()
   window.location.hash = '#/register'
 }

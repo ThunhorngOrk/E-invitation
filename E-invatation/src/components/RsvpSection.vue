@@ -1,8 +1,7 @@
 <script setup>
 import { reactive, ref } from 'vue'
-import { invitation } from '../stores/invitation'
-import { toKhmerNumber } from '../utils/khmer'
-import { addResponse } from '../utils/rsvpStorage'
+import { invitation, submitRsvp } from '../stores/invitation'
+import { formatNumber, t } from '../i18n'
 
 const form = reactive({
   name: '',
@@ -12,35 +11,39 @@ const form = reactive({
 })
 
 const error = ref('')
+const loading = ref(false)
 const submitted = ref(false)
 const savedName = ref('')
 const savedAttendance = ref('yes')
 const savedGuests = ref(1)
 
-function submit() {
+async function submit() {
   if (!form.name) {
-    error.value = 'សូមបញ្ចូលឈ្មោះរបស់អ្នក'
+    error.value = t('invitation.rsvpNameRequired')
     return
   }
+  if (loading.value) return
 
   error.value = ''
-  savedName.value = form.name
-  savedAttendance.value = form.attendance
-  savedGuests.value = form.guests
+  loading.value = true
 
   try {
-    addResponse({
+    await submitRsvp({
       name: form.name,
       attendance: form.attendance,
-      guests: form.guests,
-      message: form.message,
-      createdAt: new Date().toISOString(),
+      guests: form.attendance === 'yes' ? form.guests : 1,
+      message: form.message || null,
     })
-  } catch {
-    // storage unavailable
-  }
 
-  submitted.value = true
+    savedName.value = form.name
+    savedAttendance.value = form.attendance
+    savedGuests.value = form.guests
+    submitted.value = true
+  } catch (err) {
+    error.value = err?.message || t('invitation.rsvpError')
+  } finally {
+    loading.value = false
+  }
 }
 
 function reset() {
@@ -65,12 +68,12 @@ function reset() {
 
         <form v-if="!submitted" class="form" novalidate @submit.prevent="submit">
           <div class="field">
-            <label for="rsvp-name">ឈ្មោះរបស់អ្នក <span class="required">*</span></label>
+            <label for="rsvp-name">{{ t('invitation.rsvpName') }} <span class="required">*</span></label>
             <input
               id="rsvp-name"
               v-model.trim="form.name"
               type="text"
-              placeholder="សូមបញ្ចូលឈ្មោះ"
+              :placeholder="t('invitation.rsvpNamePlaceholder')"
               autocomplete="name"
               :aria-invalid="Boolean(error)"
               @input="error = ''"
@@ -79,7 +82,7 @@ function reset() {
           </div>
 
           <div class="field">
-            <span class="field-label">តើអ្នកអាចចូលរួមបានទេ?</span>
+            <span class="field-label">{{ t('invitation.rsvpAttend') }}</span>
             <div class="choices">
               <label class="choice" :class="{ active: form.attendance === 'yes' }">
                 <input v-model="form.attendance" type="radio" value="yes" />
@@ -92,7 +95,7 @@ function reset() {
                     stroke-linejoin="round"
                   />
                 </svg>
-                អញ្ជើញចូលរួម
+                {{ t('invitation.rsvpYes') }}
               </label>
               <label class="choice" :class="{ active: form.attendance === 'no' }">
                 <input v-model="form.attendance" type="radio" value="no" />
@@ -104,33 +107,33 @@ function reset() {
                     stroke-linecap="round"
                   />
                 </svg>
-                មិនអាចចូលរួម
+                {{ t('invitation.rsvpNo') }}
               </label>
             </div>
           </div>
 
           <div v-if="form.attendance === 'yes'" class="field guests">
-            <label for="rsvp-guests">ចំនួនភ្ញៀវ</label>
+            <label for="rsvp-guests">{{ t('invitation.rsvpGuests') }}</label>
             <select id="rsvp-guests" v-model.number="form.guests">
               <option v-for="count in 6" :key="count" :value="count">
-                {{ toKhmerNumber(count) }} នាក់
+                {{ t('invitation.rsvpGuestsUnit', { n: formatNumber(count) }) }}
               </option>
             </select>
           </div>
 
           <div class="field">
             <label for="rsvp-message">
-              សារជូនពរ <span class="optional">(មិនចាំបាច់)</span>
+              {{ t('invitation.rsvpMessage') }} <span class="optional">{{ t('invitation.rsvpOptional') }}</span>
             </label>
             <textarea
               id="rsvp-message"
               v-model.trim="form.message"
               rows="3"
-              placeholder="សរសេរសារជូនពរដល់គូស្វាមីភរិយា..."
+              :placeholder="t('invitation.rsvpMessagePlaceholder')"
             ></textarea>
           </div>
 
-          <button class="btn btn-gold" type="submit">
+          <button class="btn btn-gold" type="submit" :disabled="loading">
             <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path
                 d="m3.5 11.5 17-7-5.5 16-3.5-6.5-8-2.5Z"
@@ -139,7 +142,7 @@ function reset() {
                 stroke-linejoin="round"
               />
             </svg>
-            ផ្ញើការឆ្លើយតប
+            {{ loading ? t('invitation.sending') : t('invitation.rsvpSend') }}
           </button>
         </form>
 
@@ -155,16 +158,15 @@ function reset() {
               />
             </svg>
           </div>
-          <h3>សូមអរគុណ!</h3>
+          <h3>{{ t('invitation.rsvpThanks') }}</h3>
           <p class="success-text">
-            យើងខ្ញុំបានទទួលការឆ្លើយតបពី <strong>{{ savedName }}</strong>
+            {{ t('invitation.rsvpReceived', { name: savedName }) }}
           </p>
           <p v-if="savedAttendance === 'yes'" class="success-sub">
-            យើងរីករាយនឹងបានជួបអ្នកនៅថ្ងៃមង្គល ជាមួយភ្ញៀវ
-            {{ toKhmerNumber(savedGuests) }} នាក់។
+            {{ t('invitation.rsvpSeeYou', { n: formatNumber(savedGuests) }) }}
           </p>
-          <p v-else class="success-sub">សូមអរគុណសម្រាប់សារជូនពរ យើងខ្ញុំនឹងនឹកអ្នក។</p>
-          <button class="btn btn-outline" type="button" @click="reset">ឆ្លើយតបម្តងទៀត</button>
+          <p v-else class="success-sub">{{ t('invitation.rsvpMissYou') }}</p>
+          <button class="btn btn-outline" type="button" @click="reset">{{ t('invitation.rsvpAgain') }}</button>
         </div>
       </div>
     </div>

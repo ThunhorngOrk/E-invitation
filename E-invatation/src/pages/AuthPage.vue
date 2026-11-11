@@ -1,7 +1,9 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
 import { login, register } from '../stores/auth'
+import { loadInvitation } from '../stores/invitation'
 import { hasChosenTheme } from '../stores/theme'
+import { t } from '../i18n'
 
 const props = defineProps({
   mode: { type: String, default: 'register' },
@@ -39,7 +41,7 @@ async function submit() {
 
   error.value = ''
   if (!isLogin.value && form.password !== form.confirm) {
-    error.value = 'ពាក្យសម្ងាត់ទាំងពីរមិនដូចគ្នាទេ'
+    error.value = t('auth.passwordMismatch')
     return
   }
 
@@ -47,13 +49,15 @@ async function submit() {
   try {
     if (isLogin.value) {
       await login({ email: form.email, password: form.password })
+      await loadInvitation()
       window.location.hash = hasChosenTheme.value ? '#/edit' : '#/styles'
     } else {
       await register(form)
+      await loadInvitation()
       window.location.hash = '#/styles'
     }
   } catch (err) {
-    error.value = err?.message || 'មានបញ្ហាមិនបានរំពឹងទុក សូមព្យាយាមម្តងទៀត'
+    error.value = err?.message || t('auth.genericError')
   } finally {
     loading.value = false
   }
@@ -68,59 +72,56 @@ async function submit() {
     <div class="auth-shell">
       <aside class="brand-panel">
         <p class="brand-eyebrow">E-invitation</p>
-        <h1 class="brand-title">សិរីមង្គល<br />អាពាហ៍ពិពាហ៍</h1>
-        <p class="brand-sub">
-          បង្កើតគណនីរបស់អ្នក បំពេញព័ត៌មានការអញ្ជើញ ជ្រើសរើសរចនាប័ទ្ម
-          និងគ្រប់គ្រងការឆ្លើយតបពីភ្ញៀវ — ទាំងអស់នៅក្នុងកន្លែងតែមួយ។
-        </p>
+        <h1 class="brand-title">{{ t('auth.brandTitle') }}</h1>
+        <p class="brand-sub">{{ t('auth.brandSub') }}</p>
 
         <ul class="brand-list">
           <li>
             <span class="dot" aria-hidden="true"></span>
-            បំពេញព័ត៌មានគូស្វាមីភរិយា គ្រួសារ និងកម្មវិធី
+            {{ t('auth.point1') }}
           </li>
           <li>
             <span class="dot" aria-hidden="true"></span>
-            បន្ថែមរូបថតគម្រប រូបថតគូ និងរូបថតអនុស្សាវរីយ៍
+            {{ t('auth.point2') }}
           </li>
           <li>
             <span class="dot" aria-hidden="true"></span>
-            ជ្រើសរើសពណ៌ និងរចនាប័ទ្មតាមចិត្តរបស់អ្នក
+            {{ t('auth.point3') }}
           </li>
           <li>
             <span class="dot" aria-hidden="true"></span>
-            តាមដានការឆ្លើយតបរបស់ភ្ញៀវ និងនាំចេញ CSV
+            {{ t('auth.point4') }}
           </li>
         </ul>
 
         <div class="brand-note">
-          <span>ឯកជនភាព</span>
-          <p>គណនី និងទិន្នន័យរក្សាទុកក្នុងឧបករណ៍នេះតែមួយ។</p>
+          <span>{{ t('auth.privacy') }}</span>
+          <p>{{ t('auth.privacyText') }}</p>
         </div>
       </aside>
 
       <section class="form-panel">
         <div class="form-head">
-          <p class="eyebrow">{{ isLogin ? 'Welcome Back' : 'Create Account' }}</p>
-          <h2>{{ isLogin ? 'ចូលគណនី' : 'ចុះឈ្មោះគណនី' }}</h2>
+          <p class="eyebrow">{{ isLogin ? t('auth.welcomeBack') : t('auth.createAccount') }}</p>
+          <h2>{{ isLogin ? t('auth.loginTitle') : t('auth.registerTitle') }}</h2>
           <p class="form-sub">
-            {{ isLogin ? 'បញ្ចូលអ៊ីមែល និងពាក្យសម្ងាត់ដើម្បីបន្តទៅកែប្រែការអញ្ជើញ។' : 'បំពេញព័ត៌មានខាងក្រោមដើម្បីចាប់ផ្តើមបង្កើតការអញ្ជើញ។' }}
+            {{ isLogin ? t('auth.loginSub') : t('auth.registerSub') }}
           </p>
         </div>
 
         <form class="form" novalidate @submit.prevent="submit">
           <label v-if="!isLogin" class="field">
-            <span>ឈ្មោះពេញ <b>*</b></span>
+            <span>{{ t('auth.fullName') }} <b>*</b></span>
             <input
               v-model.trim="form.name"
               type="text"
               autocomplete="name"
-              placeholder="ឧ. សុខ ដារា"
+              :placeholder="t('auth.fullNamePlaceholder')"
             />
           </label>
 
           <label class="field">
-            <span>អ៊ីមែល <b>*</b></span>
+            <span>{{ t('auth.email') }} <b>*</b></span>
             <input
               v-model.trim="form.email"
               type="email"
@@ -130,7 +131,7 @@ async function submit() {
           </label>
 
           <label v-if="!isLogin" class="field">
-            <span>លេខទូរស័ព្ទ</span>
+            <span>{{ t('auth.phone') }}</span>
             <input
               v-model.trim="form.phone"
               type="tel"
@@ -140,40 +141,40 @@ async function submit() {
           </label>
 
           <label class="field">
-            <span>ពាក្យសម្ងាត់ <b>*</b></span>
+            <span>{{ t('auth.password') }} <b>*</b></span>
             <input
               v-model="form.password"
               type="password"
               :autocomplete="isLogin ? 'current-password' : 'new-password'"
-              placeholder="យ៉ាងតិច ៦ តួអក្សរ"
+              :placeholder="t('auth.passwordPlaceholder')"
             />
           </label>
 
           <label v-if="!isLogin" class="field">
-            <span>បញ្ជាក់ពាក្យសម្ងាត់ <b>*</b></span>
+            <span>{{ t('auth.confirmPassword') }} <b>*</b></span>
             <input
               v-model="form.confirm"
               type="password"
               autocomplete="new-password"
-              placeholder="វាយពាក្យសម្ងាត់ម្តងទៀត"
+              :placeholder="t('auth.confirmPlaceholder')"
             />
           </label>
 
           <p v-if="error" class="error" role="alert">{{ error }}</p>
 
           <button class="btn btn-gold submit" type="submit" :disabled="loading">
-            {{ loading ? 'សូមរង់ចាំ...' : isLogin ? 'ចូលគណនី' : 'ចុះឈ្មោះ និងបន្ត' }}
+            {{ loading ? t('auth.waiting') : isLogin ? t('auth.loginButton') : t('auth.registerButton') }}
           </button>
         </form>
 
         <p class="switch">
           <template v-if="isLogin">
-            មិនទាន់មានគណនី?
-            <button type="button" @click="switchMode('register')">ចុះឈ្មោះឥឡូវ</button>
+            {{ t('auth.noAccount') }}
+            <button type="button" @click="switchMode('register')">{{ t('auth.registerNow') }}</button>
           </template>
           <template v-else>
-            មានគណនីរួចហើយ?
-            <button type="button" @click="switchMode('login')">ចូលគណនី</button>
+            {{ t('auth.haveAccount') }}
+            <button type="button" @click="switchMode('login')">{{ t('auth.loginNow') }}</button>
           </template>
         </p>
       </section>
@@ -265,6 +266,7 @@ async function submit() {
   font-size: clamp(1.5rem, 3.6vw, 2.15rem);
   line-height: 1.9;
   color: var(--gold-200);
+  white-space: pre-line;
 }
 
 .brand-sub {

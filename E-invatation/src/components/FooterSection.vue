@@ -1,16 +1,16 @@
 <script setup>
 import { ref } from 'vue'
 import { invitation } from '../stores/invitation'
-import { toKhmerNumber } from '../utils/khmer'
+import { formatNumber, pickLocalized, t } from '../i18n'
 import KhmerDivider from './KhmerDivider.vue'
 
-const year = toKhmerNumber(new Date().getFullYear())
+const year = new Date().getFullYear()
 const copied = ref(false)
 
 async function share() {
   const data = {
     title: document.title,
-    text: `${invitation.groom.nameKh} និង ${invitation.bride.nameKh}`,
+    text: `${pickLocalized(invitation.groom.nameKh, invitation.groom.nameEn)} ${t('invitation.and')} ${pickLocalized(invitation.bride.nameKh, invitation.bride.nameEn)}`,
     url: window.location.href,
   }
 
@@ -44,13 +44,13 @@ async function share() {
       <p class="blessing">{{ invitation.blessing }}</p>
 
       <h3 class="names">
-        <span class="text-gold">{{ invitation.groom.nameKh }}</span>
-        <span class="and">និង</span>
-        <span class="text-gold">{{ invitation.bride.nameKh }}</span>
+        <span class="text-gold">{{ pickLocalized(invitation.groom.nameKh, invitation.groom.nameEn) }}</span>
+        <span class="and">{{ t('invitation.and') }}</span>
+        <span class="text-gold">{{ pickLocalized(invitation.bride.nameKh, invitation.bride.nameEn) }}</span>
       </h3>
 
-      <p class="date">{{ invitation.dateKh }}</p>
-      <p class="venue">{{ invitation.venue.name }}</p>
+      <p class="date">{{ pickLocalized(invitation.dateKh, invitation.dateEn) }}</p>
+      <p class="venue">{{ pickLocalized(invitation.venue.name, invitation.venue.nameEn) }}</p>
 
       <button class="btn btn-ghost" type="button" @click="share">
         <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -62,18 +62,18 @@ async function share() {
             stroke-linejoin="round"
           />
         </svg>
-        ចែករំលែកការអញ្ជើញ
+        {{ t('invitation.shareInvitation') }}
       </button>
 
       <p class="thanks">{{ invitation.thanksText }}</p>
       <p class="credit">
-        ធ្វើឡើងដោយក្តីស្រលាញ់ • {{ year }} •
-        <a class="edit-link" href="#/edit">កែប្រែការអញ្ជើញ</a>
+        {{ t('invitation.credit', { year: formatNumber(year) }) }}
+        <a class="edit-link" href="#/edit">{{ t('invitation.editInvitation') }}</a>
       </p>
     </div>
 
     <Transition name="toast">
-      <p v-if="copied" class="toast" role="status">បានចម្លងតំណភ្ជាប់</p>
+      <p v-if="copied" class="toast" role="status">{{ t('invitation.copied') }}</p>
     </Transition>
   </footer>
 </template>

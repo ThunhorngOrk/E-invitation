@@ -7,7 +7,7 @@ import { categoryOptions, useEventDraft } from '../composables/useEventDraft'
 import { prepareImage } from '../utils/image'
 import { formatNumber, t } from '../i18n'
 import { eventToInvitation } from '../utils/eventToInvitation'
-import { importInvitation, invitationSnapshot } from '../stores/invitation'
+import { importInvitation, invitationSnapshot, uploadImage } from '../stores/invitation'
 
 const {
   form,
@@ -112,7 +112,9 @@ async function handleCoverChange(event) {
   const file = event.target.files?.[0]
   if (!file) return
   try {
-    form.coverImage = await prepareImage(file, 1200)
+    const dataUrl = await prepareImage(file, 1200)
+    const url = await uploadImage(dataUrl, 'cover')
+    form.coverImage = url
     notify(t('form.toastCoverAdded'))
   } catch {
     notify(t('form.toastImageError'), 'error')
@@ -136,7 +138,7 @@ function goPrevious() {
   }
 }
 
-function handleSubmit() {
+async function handleSubmit() {
   if (!validate()) {
     notify(t('form.toastValidation'), 'error')
     nextTick(() => {
@@ -150,8 +152,8 @@ function handleSubmit() {
   }
 
   submitted.value = true
-  const saved = persist()
-  importInvitation(eventToInvitation(form, invitationSnapshot()))
+  await persist()
+  const saved = await importInvitation(eventToInvitation(form, invitationSnapshot()))
 
   notify(saved ? t('form.toastSaved') : t('form.toastSavedLocal'), saved ? 'success' : 'info')
 

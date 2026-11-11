@@ -16,6 +16,18 @@ function loadImage(source) {
   })
 }
 
+export function dataUrlToBlob(dataUrl) {
+  const [header, base64] = String(dataUrl || '').split(',')
+  if (!base64) throw new Error('invalid-data-url')
+  const mime = /:(.*?);/.exec(header)?.[1] || 'image/jpeg'
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index)
+  }
+  return new Blob([bytes], { type: mime })
+}
+
 export async function prepareImage(file, maxDimension = 1400) {
   if (!file || !file.type.startsWith('image/')) {
     throw new Error('not-an-image')

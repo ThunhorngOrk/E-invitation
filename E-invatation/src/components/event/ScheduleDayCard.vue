@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import Icon from './Icon.vue'
 import FormField from './FormField.vue'
-import { toKhmerNumber } from '../../utils/khmer'
+import { formatNumber, locale, t } from '../../i18n'
 
 const props = defineProps({
   day: { type: Object, required: true },
@@ -12,11 +12,11 @@ const props = defineProps({
 defineEmits(['toggle', 'remove', 'add-activity', 'remove-activity'])
 
 const dateLabel = computed(() => {
-  if (!props.day.date) return 'មិនទាន់កំណត់ថ្ងៃ'
+  if (!props.day.date) return t('schedule.unscheduled')
   const date = new Date(`${props.day.date}T00:00:00`)
   if (Number.isNaN(date.getTime())) return props.day.date
   try {
-    return date.toLocaleDateString('km-KH', {
+    return date.toLocaleDateString(locale.value === 'km' ? 'km-KH' : 'en-US', {
       weekday: 'short',
       day: 'numeric',
       month: 'short',
@@ -32,17 +32,17 @@ const dateLabel = computed(() => {
   <article class="day" :class="{ open: day.open }">
     <div class="day-head">
       <button class="day-toggle" type="button" :aria-expanded="day.open" @click="$emit('toggle')">
-        <span class="day-badge">{{ toKhmerNumber(index + 1) }}</span>
+        <span class="day-badge">{{ formatNumber(index + 1) }}</span>
         <span class="day-titles">
-          <strong>ថ្ងៃទី {{ toKhmerNumber(index + 1) }}</strong>
-          <small>{{ dateLabel }} · {{ toKhmerNumber(day.activities.length) }} សកម្មភាព</small>
+          <strong>{{ t('schedule.dayNumber', { n: formatNumber(index + 1) }) }}</strong>
+          <small>{{ t('schedule.summary', { date: dateLabel, n: formatNumber(day.activities.length) }) }}</small>
         </span>
         <span class="chev-wrap">
           <Icon name="chevron-down" :size="18" class="chev" />
         </span>
       </button>
 
-      <button class="day-remove" type="button" aria-label="លុបថ្ងៃនេះ" @click="$emit('remove')">
+      <button class="day-remove" type="button" :aria-label="t('schedule.removeDay')" @click="$emit('remove')">
         <Icon name="trash" :size="17" />
       </button>
     </div>
@@ -52,30 +52,30 @@ const dateLabel = computed(() => {
         <div class="day-body">
           <FormField
             v-model="day.date"
-            label="ថ្ងៃនៃកម្មវិធី"
+            :label="t('schedule.eventDate')"
             icon="calendar"
             type="date"
           />
 
           <div class="activities-head">
-            <span class="activities-title">សកម្មភាព</span>
-            <span class="activities-count">{{ toKhmerNumber(day.activities.length) }}</span>
+            <span class="activities-title">{{ t('schedule.activities') }}</span>
+            <span class="activities-count">{{ formatNumber(day.activities.length) }}</span>
           </div>
 
           <p v-if="!day.activities.length" class="activities-empty">
-            មិនទាន់មានសកម្មភាពនៅឡើយទេ។
+            {{ t('schedule.noActivities') }}
           </p>
 
           <ul v-else class="activities">
             <li v-for="(activity, activityIndex) in day.activities" :key="activity.id" class="activity">
-              <span class="activity-index">{{ toKhmerNumber(activityIndex + 1) }}</span>
+              <span class="activity-index">{{ formatNumber(activityIndex + 1) }}</span>
 
               <div class="activity-fields">
                 <input
                   v-model="activity.name"
                   class="activity-name"
                   type="text"
-                  placeholder="ឈ្មោះសកម្មភាព"
+                  :placeholder="t('schedule.activityName')"
                 />
                 <div class="activity-time">
                   <Icon name="clock" :size="16" />
@@ -86,7 +86,7 @@ const dateLabel = computed(() => {
               <button
                 class="activity-remove"
                 type="button"
-                aria-label="លុបសកម្មភាព"
+                :aria-label="t('schedule.removeActivity')"
                 @click="$emit('remove-activity', activity.id)"
               >
                 <Icon name="x" :size="16" />
@@ -96,7 +96,7 @@ const dateLabel = computed(() => {
 
           <button class="add-activity" type="button" @click="$emit('add-activity')">
             <Icon name="plus" :size="16" />
-            បន្ថែមសកម្មភាព
+            {{ t('schedule.addActivity') }}
           </button>
         </div>
       </div>

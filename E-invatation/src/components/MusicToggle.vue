@@ -1,5 +1,6 @@
 <script setup>
 import { useMusic } from '../composables/useMusic'
+import { t } from '../i18n'
 
 const { playing, toggle } = useMusic()
 </script>
@@ -9,8 +10,8 @@ const { playing, toggle } = useMusic()
     class="music-toggle"
     :class="{ playing }"
     type="button"
-    :aria-label="playing ? 'បិទតន្ត្រី' : 'បើកតន្ត្រី'"
-    :title="playing ? 'បិទតន្ត្រី' : 'បើកតន្ត្រី'"
+    :aria-label="playing ? t('invitation.musicOff') : t('invitation.musicOn')"
+    :title="playing ? t('invitation.musicOff') : t('invitation.musicOn')"
     @click="toggle"
   >
     <span class="bars" aria-hidden="true">
@@ -19,7 +20,7 @@ const { playing, toggle } = useMusic()
       <i></i>
       <i></i>
     </span>
-    <span class="sr-only">{{ playing ? 'បិទតន្ត្រី' : 'បើកតន្ត្រី' }}</span>
+    <span class="sr-only">{{ playing ? t('invitation.musicOff') : t('invitation.musicOn') }}</span>
   </button>
 </template>
 

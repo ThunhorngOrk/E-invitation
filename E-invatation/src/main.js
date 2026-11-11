@@ -6,6 +6,13 @@ import './styles/dark.css'
 import './stores/theme'
 import './stores/mode'
 import './i18n'
+import { initAuth, isAuthenticated } from './stores/auth'
+import { loadInvitation } from './stores/invitation'
+
+await initAuth()
+if (isAuthenticated.value) {
+  await loadInvitation()
+}
 
 const reveal = {
   mounted(element, binding) {

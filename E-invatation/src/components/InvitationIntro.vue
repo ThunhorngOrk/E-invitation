@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue'
 import { invitation } from '../stores/invitation'
+import { pickLocalized, t } from '../i18n'
 import PetalRain from './PetalRain.vue'
 
 const emit = defineEmits(['open'])
@@ -44,7 +45,7 @@ onUnmounted(() => {
       :class="{ opening }"
       role="dialog"
       aria-modal="true"
-      aria-label="បើកការអញ្ជើញ"
+      :aria-label="t('invitation.open')"
     >
       <div class="panel panel-left">
         <span class="panel-pattern" aria-hidden="true"></span>
@@ -70,9 +71,9 @@ onUnmounted(() => {
         </div>
 
         <h1 class="names">
-          <span>{{ invitation.groom.nameKh }}</span>
-          <span class="and">និង</span>
-          <span>{{ invitation.bride.nameKh }}</span>
+          <span>{{ pickLocalized(invitation.groom.nameKh, invitation.groom.nameEn) }}</span>
+          <span class="and">{{ t('invitation.and') }}</span>
+          <span>{{ pickLocalized(invitation.bride.nameKh, invitation.bride.nameEn) }}</span>
         </h1>
         <p class="names-en">{{ invitation.groom.nameEn }} &amp; {{ invitation.bride.nameEn }}</p>
 
@@ -82,7 +83,7 @@ onUnmounted(() => {
           <span></span>
         </div>
 
-        <p class="date">{{ invitation.dateKh }}</p>
+        <p class="date">{{ pickLocalized(invitation.dateKh, invitation.dateEn) }}</p>
 
         <button class="open-btn" type="button" @click="openInvitation">
           <span class="seal" aria-hidden="true">
@@ -97,13 +98,13 @@ onUnmounted(() => {
             </svg>
           </span>
           <span class="btn-copy">
-            <strong>{{ opening ? 'កំពុងបើក...' : 'បើកការអញ្ជើញ' }}</strong>
-            <small>Open Invitation</small>
+            <strong>{{ opening ? t('invitation.opening') : t('invitation.open') }}</strong>
+            <small>{{ t('invitation.openSub') }}</small>
           </span>
         </button>
       </div>
 
-      <p class="hint" :class="{ opening }">ចុចប៊ូតុងដើម្បីបើកការអញ្ជើញ</p>
+      <p class="hint" :class="{ opening }">{{ t('invitation.openHint') }}</p>
     </div>
   </Teleport>
 </template>

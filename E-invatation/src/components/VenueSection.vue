@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { invitation } from '../stores/invitation'
-import { toKhmerTime } from '../utils/khmer'
+import { formatTime, pickLocalized, t } from '../i18n'
 import KhmerDivider from './KhmerDivider.vue'
 
 const mapUrl = computed(
@@ -20,7 +20,7 @@ const mapUrl = computed(
 
       <div class="venue-grid">
         <div class="ornate-card venue-card">
-          <h3>{{ invitation.venue.name }}</h3>
+          <h3>{{ pickLocalized(invitation.venue.name, invitation.venue.nameEn) }}</h3>
           <p class="en">{{ invitation.venue.nameEn }}</p>
           <div class="divider-wrap">
             <KhmerDivider />
@@ -39,7 +39,7 @@ const mapUrl = computed(
               </svg>
             </span>
             <div>
-              <p class="label">អាសយដ្ឋាន</p>
+              <p class="label">{{ t('invitation.address') }}</p>
               <p class="value">{{ invitation.venue.address }}</p>
             </div>
           </div>
@@ -52,8 +52,8 @@ const mapUrl = computed(
               </svg>
             </span>
             <div>
-              <p class="label">ថ្ងៃពិធី</p>
-              <p class="value">{{ invitation.dateKh }}</p>
+              <p class="label">{{ t('invitation.eventDate') }}</p>
+              <p class="value">{{ pickLocalized(invitation.dateKh, invitation.dateEn) }}</p>
             </div>
           </div>
 
@@ -65,8 +65,8 @@ const mapUrl = computed(
               </svg>
             </span>
             <div>
-              <p class="label">ម៉ោងចាប់ផ្តើម</p>
-              <p class="value">{{ toKhmerTime(invitation.eventTime) }}</p>
+              <p class="label">{{ t('invitation.startTime') }}</p>
+              <p class="value">{{ formatTime(invitation.eventTime) }}</p>
             </div>
           </div>
 
@@ -81,13 +81,13 @@ const mapUrl = computed(
                 stroke-linejoin="round"
               />
             </svg>
-            បើកផែនទី Google Maps
+            {{ t('invitation.openMap') }}
           </a>
         </div>
 
         <div class="map-card">
           <span class="map-badge">{{ invitation.mapBadge }}</span>
-          <svg viewBox="0 0 520 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="ផែនទីទីតាំងពិធី">
+          <svg viewBox="0 0 520 400" preserveAspectRatio="xMidYMid slice" role="img" :aria-label="t('invitation.mapAria')">
             <rect width="520" height="400" fill="#f4ecdc" />
 
             <path
@@ -138,7 +138,7 @@ const mapUrl = computed(
                 font-size="13"
                 fill="#4a1220"
               >
-                ទីតាំងពិធី
+                {{ t('invitation.mapPin') }}
               </text>
             </g>
           </svg>

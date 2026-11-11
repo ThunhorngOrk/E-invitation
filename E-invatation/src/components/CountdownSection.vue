@@ -1,17 +1,18 @@
 <script setup>
+import { computed } from 'vue'
 import { invitation } from '../stores/invitation'
 import { useCountdown } from '../composables/useCountdown'
-import { toKhmerNumber } from '../utils/khmer'
+import { formatNumber, pickLocalized, t } from '../i18n'
 import KhmerDivider from './KhmerDivider.vue'
 
 const { remaining, isPast } = useCountdown(invitation.dateISO)
 
-const units = [
-  { key: 'days', label: 'ថ្ងៃ', pad: 0 },
-  { key: 'hours', label: 'ម៉ោង', pad: 2 },
-  { key: 'minutes', label: 'នាទី', pad: 2 },
-  { key: 'seconds', label: 'វិនាទី', pad: 2 },
-]
+const units = computed(() => [
+  { key: 'days', label: t('common.days'), pad: 0 },
+  { key: 'hours', label: t('common.hours'), pad: 2 },
+  { key: 'minutes', label: t('common.minutes'), pad: 2 },
+  { key: 'seconds', label: t('common.seconds'), pad: 2 },
+])
 </script>
 
 <template>
@@ -23,12 +24,12 @@ const units = [
       <p class="eyebrow">{{ invitation.countdownEyebrow }}</p>
       <h2 class="kh-heading">{{ invitation.countdownTitle }}</h2>
       <KhmerDivider />
-      <p class="date">{{ invitation.dateKh }}</p>
+      <p class="date">{{ pickLocalized(invitation.dateKh, invitation.dateEn) }}</p>
       <p class="lunar">{{ invitation.lunarKh }}</p>
 
       <div v-if="!isPast" class="grid">
         <div v-for="unit in units" :key="unit.key" class="unit">
-          <span class="number">{{ toKhmerNumber(remaining[unit.key], unit.pad) }}</span>
+          <span class="number">{{ formatNumber(remaining[unit.key], unit.pad) }}</span>
           <span class="label">{{ unit.label }}</span>
         </div>
       </div>
@@ -36,12 +37,12 @@ const units = [
       <p v-else class="done">{{ invitation.countdownPast }}</p>
 
       <div class="meta">
-        <span>{{ invitation.venue.name }}</span>
+        <span>{{ pickLocalized(invitation.venue.name, invitation.venue.nameEn) }}</span>
         <span class="dot" aria-hidden="true">•</span>
-        <span>{{ invitation.dateEn }}</span>
+        <span>{{ pickLocalized(invitation.dateKh, invitation.dateEn) }}</span>
       </div>
 
-      <a class="btn btn-gold" href="#rsvp">ឆ្លើយតបការអញ្ជើញ</a>
+      <a class="btn btn-gold" href="#rsvp">{{ t('invitation.rsvp') }}</a>
     </div>
   </section>
 </template>

@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { invitation } from '../stores/invitation'
-import { toKhmerNumber } from '../utils/khmer'
+import { formatNumber, t } from '../i18n'
 
 const activeIndex = ref(-1)
 const activeItem = computed(() => invitation.gallery[activeIndex.value] ?? null)
@@ -70,7 +70,7 @@ onUnmounted(() => {
             </svg>
           </span>
           <span class="tile-caption">
-            <span class="tile-num">{{ toKhmerNumber(index + 1, 2) }}</span>
+            <span class="tile-num">{{ formatNumber(index + 1, 2) }}</span>
             <span class="tile-text">{{ item.caption }}</span>
           </span>
         </button>
@@ -80,7 +80,7 @@ onUnmounted(() => {
     <Teleport to="body">
       <Transition name="lightbox">
         <div v-if="activeItem" class="lightbox" @click.self="close">
-          <button type="button" class="lb-close" aria-label="បិទ" @click="close">
+          <button type="button" class="lb-close" :aria-label="t('invitation.close')" @click="close">
             <svg viewBox="0 0 24 24" fill="none">
               <path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
             </svg>
@@ -109,7 +109,7 @@ onUnmounted(() => {
             </template>
             <span class="lb-overlay" aria-hidden="true"></span>
             <p class="lb-caption">{{ activeItem.caption }}</p>
-            <p class="lb-note">រូបថតអនុស្សាវរីយ៍</p>
+            <p class="lb-note">{{ t('invitation.galleryNote') }}</p>
           </div>
         </div>
       </Transition>

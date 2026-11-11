@@ -1,6 +1,6 @@
 <script setup>
 import { invitation } from '../stores/invitation'
-import { toKhmerTime } from '../utils/khmer'
+import { formatTime } from '../i18n'
 </script>
 
 <template>
@@ -21,7 +21,7 @@ import { toKhmerTime } from '../utils/khmer'
         >
           <span class="marker" aria-hidden="true"></span>
           <div class="card">
-            <span class="time">{{ toKhmerTime(item.time) }}</span>
+            <span class="time">{{ formatTime(item.time) }}</span>
             <h3>{{ item.title }}</h3>
             <p>{{ item.desc }}</p>
           </div>

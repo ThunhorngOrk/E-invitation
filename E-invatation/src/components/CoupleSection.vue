@@ -1,5 +1,6 @@
 <script setup>
 import { invitation } from '../stores/invitation'
+import { pickLocalized } from '../i18n'
 </script>
 
 <template>
@@ -18,7 +19,7 @@ import { invitation } from '../stores/invitation'
               v-if="invitation.groom.photo"
               class="photo"
               :src="invitation.groom.photo"
-              :alt="invitation.groom.nameKh"
+              :alt="pickLocalized(invitation.groom.nameKh, invitation.groom.nameEn)"
             />
             <template v-else>
               <span class="initial">{{ invitation.groom.initial }}</span>
@@ -27,7 +28,7 @@ import { invitation } from '../stores/invitation'
             <span v-if="invitation.groom.photo" class="photo-shade" aria-hidden="true"></span>
           </div>
           <p class="role">{{ invitation.groom.role }}</p>
-          <h3 class="name">{{ invitation.groom.nameKh }}</h3>
+          <h3 class="name">{{ pickLocalized(invitation.groom.nameKh, invitation.groom.nameEn) }}</h3>
           <p class="name-en">{{ invitation.groom.nameEn }}</p>
           <p class="parents">{{ invitation.groom.parents }}</p>
         </article>
@@ -52,7 +53,7 @@ import { invitation } from '../stores/invitation'
               v-if="invitation.bride.photo"
               class="photo"
               :src="invitation.bride.photo"
-              :alt="invitation.bride.nameKh"
+              :alt="pickLocalized(invitation.bride.nameKh, invitation.bride.nameEn)"
             />
             <template v-else>
               <span class="initial">{{ invitation.bride.initial }}</span>
@@ -61,7 +62,7 @@ import { invitation } from '../stores/invitation'
             <span v-if="invitation.bride.photo" class="photo-shade" aria-hidden="true"></span>
           </div>
           <p class="role">{{ invitation.bride.role }}</p>
-          <h3 class="name">{{ invitation.bride.nameKh }}</h3>
+          <h3 class="name">{{ pickLocalized(invitation.bride.nameKh, invitation.bride.nameEn) }}</h3>
           <p class="name-en">{{ invitation.bride.nameEn }}</p>
           <p class="parents">{{ invitation.bride.parents }}</p>
         </article>
